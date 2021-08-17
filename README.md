@@ -6,3 +6,5 @@ Learning for TAMP especially focused on hierarchical stacking blocks(this task c
 
 *STATUS :* [`In Progress`](https://github.com/ropiens/project-sandwich-man/projects/1)
 
+### Preview
+<img src = "https://user-images.githubusercontent.com/26274945/129780329-1aada415-089c-47a1-b79b-33e564b0d804.png" width="40%">
