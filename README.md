@@ -11,4 +11,4 @@ Learning for TAMP especially focused on hierarchical stacking blocks(this task c
 
 ## Project Abstract
 1. Survey
-  - [awesome-block-stacking-manipulation](https://github.com/ropiens/awesome-block-stacking-manipulation)
+   - [awesome-block-stacking-manipulation](https://github.com/ropiens/awesome-block-stacking-manipulation)
