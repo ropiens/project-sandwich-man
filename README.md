@@ -1,6 +1,6 @@
-# project-sandwich-man(working title)
+# project-sandwich-man
 
-Project for a complex and long-horizon manipulation task especially focused on hierarchically stacking blocks(With this task, we could make a sandwich!).
+A project for a complex and long-horizon manipulation task especially focused on hierarchically stacking blocks(With this task, we could make a sandwich!).
 
 
 *STATUS :* [`In Progress`](https://github.com/ropiens/project-sandwich-man/projects/1)
