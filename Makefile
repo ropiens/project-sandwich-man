@@ -7,7 +7,7 @@ init:
 setup:
 	virtualenv venv
 	source venv/bin/activate;\
-	python3 -m pip install panda-gym;\
+	python3 -m pip install -e panda-gym;\
 	python3 -m pip install -r requirements.txt
 	
 format:
