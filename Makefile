@@ -17,3 +17,8 @@ format:
 clean:
 	rm -rf venv
 	find -iname "*.pyc" -delete
+
+.PHONY : test
+test:
+	source venv/bin/activate;\
+	python test/test_env.py
