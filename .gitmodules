@@ -1,0 +1,3 @@
+[submodule "panda-gym"]
+	path = panda-gym
+	url = https://github.com/ropiens/panda-gym
