@@ -1,3 +1,7 @@
 [submodule "panda-gym"]
 	path = panda-gym
 	url = https://github.com/ropiens/panda-gym
+
+[submodule "rlkit"]
+	path = rlkit
+	url = https://github.com/rail-berkeley/rlkit

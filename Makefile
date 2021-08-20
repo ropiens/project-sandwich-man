@@ -7,12 +7,13 @@ init:
 setup:
 	virtualenv venv
 	source venv/bin/activate;\
-	python3 -m pip install -e panda-gym;\
-	python3 -m pip install -r requirements.txt
+	pip install -e panda-gym;\
+	pip install -e rlkit;\
+	pip install -r requirements.txt
 	
 format:
-	black . --exclude external --line-length 104
-	isort . --sg external
+	black . --exclude rlkit --line-length 104
+	isort . --sg rlkit
 
 clean:
 	rm -rf venv

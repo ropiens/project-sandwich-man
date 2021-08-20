@@ -1,0 +1,8 @@
+# for rlkit
+torch
+torchvision
+python-dateutil
+gtimer
+
+# formatter
+black
