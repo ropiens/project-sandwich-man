@@ -1,0 +1,4 @@
+stable-baselines3[extra,tests,docs]>=1.1.0a11
+pybullet
+sb3-contrib>=1.1.0a11
+panda-gym
