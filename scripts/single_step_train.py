@@ -73,7 +73,7 @@ def main(args):
     log_dir = currpath
     os.makedirs(log_dir, exist_ok=True)
 
-    env = gym.make(args.env_id, render=True)
+    env = gym.make(args.env_id, render=False if args.no_render else True)
     env = Monitor(env, log_dir)
     her_kwargs = dict(
         online_sampling=True, n_sampled_goal=4, goal_selection_strategy="future", max_episode_length=100
@@ -98,20 +98,20 @@ def main(args):
         replay_buffer_kwargs=her_kwargs,
         verbose=1,
         buffer_size=1000000,
-        learning_rate=0.003,
-        learning_starts=5e3,
+        learning_rate=0.001,
+        learning_starts=1000,
         gamma=0.95,
-        batch_size=128,
-        tensorboard_log=f"./sac_her/{args.env_id}",
-        policy_kwargs=dict(net_arch=[128, 128]),
+        batch_size=2048,
+        tensorboard_log=f"./logs/sac_her/{args.env_id}",
+        policy_kwargs=dict(net_arch=[128,128,128]),
     )
 
     model.learn(total_timesteps=100000)
 
-    model.save(str(currpath) + f"/sac_her/{args.env_id}")
-    model.save_replay_buffer(str(currpath) + f"/sac_her/{args.env_id}/replay_buffer")
+    model.save(str(currpath) + f"/logs/sac_her/{args.env_id}")
+    model.save_replay_buffer(str(currpath) + f"/logs/sac_her/{args.env_id}/replay_buffer")
 
-    loaded_model = SAC.load(f"sac_her/{args.env_id}.zip", env=env)
+    loaded_model = SAC.load(f"logs/sac_her/{args.env_id}.zip", env=env)
     # loaded_model.load_replay_buffer(f"/sac_her/{env_id}/replay_buffer")
 
     observation = env.reset()
@@ -134,7 +134,14 @@ if __name__ == "__main__":
         "--env-id",
         type=str,
         default="PandaReach-v1",
-        help="panda-gym environment[PandaReach-v1, PandaSlice-v1, PandaPush-v1, PandaPickAndPlace-v1, PandaStack-v1]",
+        help="panda-gym environment default: PandaReach-v1, \
+        option :[PandaReach-v1, PandaSlice-v1, PandaPush-v1, PandaPickAndPlace-v1, PandaStack-v1]",
+    )
+    parser.add_argument(
+        "--no-render",
+        type=bool,
+        default=False,
+        help="gym render otpion",
     )
     args = parser.parse_args()
 
