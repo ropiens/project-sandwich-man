@@ -79,6 +79,17 @@ def main(args):
         online_sampling=True, n_sampled_goal=4, goal_selection_strategy="future", max_episode_length=100
     )
 
+    # Add our Landmark
+    p = env.sim.physics_client
+    path = os.path.abspath(os.path.join(__file__, "../.."))
+    p.loadURDF(
+        f"{path}/ropiens/ropiens.urdf",
+        [-0.2, 0.9, 0.3],
+        [0.5, 0.5, 0.5, 0.5],
+        globalScaling=3,
+        useFixedBase=1,
+    )
+
     model = SAC(
         "MultiInputPolicy",
         env,
@@ -88,11 +99,11 @@ def main(args):
         verbose=1,
         buffer_size=1000000,
         learning_rate=0.003,
-        learning_starts=10000,
+        learning_starts=5e3,
         gamma=0.95,
         batch_size=128,
         tensorboard_log=f"./sac_her/{args.env_id}",
-        policy_kwargs=dict(net_arch=[64, 64]),
+        policy_kwargs=dict(net_arch=[128, 128]),
     )
 
     model.learn(total_timesteps=100000)
