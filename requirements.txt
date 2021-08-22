@@ -6,3 +6,4 @@ gtimer
 
 # formatter
 black
+isort
