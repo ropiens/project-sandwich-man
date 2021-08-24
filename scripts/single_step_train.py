@@ -59,6 +59,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
         return True
 
+
 def main(args):
     # for the reward log
     currpath = os.getcwd()
@@ -68,7 +69,9 @@ def main(args):
 
     env = gym.make(args.env_id, render=False if args.no_render else True)
     env = Monitor(env, log_dir)
-    callback = SaveOnBestTrainingRewardCallback(check_freq=100, log_dir=log_dir) #check frequency set for reward checking 
+    callback = SaveOnBestTrainingRewardCallback(
+        check_freq=100, log_dir=log_dir
+    )  # check frequency set for reward checking
 
     her_kwargs = dict(
         online_sampling=True, n_sampled_goal=4, goal_selection_strategy="future", max_episode_length=100
@@ -84,7 +87,7 @@ def main(args):
         globalScaling=3,
         useFixedBase=1,
     )
-    
+
     model = SAC(
         "MultiInputPolicy",
         env,
@@ -98,11 +101,11 @@ def main(args):
         gamma=0.95,
         batch_size=256,
         tensorboard_log=f"./logs/sac_her/{args.env_id}",
-        policy_kwargs=dict(net_arch=[128,128,128]),
+        policy_kwargs=dict(net_arch=[128, 128, 128]),
     )
 
     try:
-        model.learn(total_timesteps=2e7, callback = callback)
+        model.learn(total_timesteps=2e7, callback=callback)
     except Exception as e:
         print(f"Error: {e}")
     finally:
