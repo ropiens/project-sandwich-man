@@ -89,7 +89,7 @@ def main(args):
         globalScaling=3,
         useFixedBase=1,
     )
-
+    
     model = SAC(
         "MultiInputPolicy",
         env,
@@ -101,28 +101,19 @@ def main(args):
         learning_rate=0.001,
         learning_starts=1000,
         gamma=0.95,
-        batch_size=2048,
+        batch_size=256,
         tensorboard_log=f"./logs/sac_her/{args.env_id}",
         policy_kwargs=dict(net_arch=[128,128,128]),
     )
 
-    model.learn(total_timesteps=100000)
+    try:
+        model.learn(total_timesteps=2e6)
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        model.save(str(currpath) + f"/logs/sac_her/{args.env_id}")
+        model.save_replay_buffer(str(currpath) + f"/logs/sac_her/{args.env_id}/replay_buffer")
 
-    model.save(str(currpath) + f"/logs/sac_her/{args.env_id}")
-    model.save_replay_buffer(str(currpath) + f"/logs/sac_her/{args.env_id}/replay_buffer")
-
-    loaded_model = SAC.load(f"logs/sac_her/{args.env_id}.zip", env=env)
-    # loaded_model.load_replay_buffer(f"/sac_her/{env_id}/replay_buffer")
-
-    observation = env.reset()
-    # test
-    for t in range(500):
-        action, _states = loaded_model.predict(observation, deterministic=False)
-
-        observation, reward, done, info = env.step(action)
-        if done:
-            print("Episode finished after {} timesteps".format(t + 1))
-            observation = env.reset()
     env.close()
 
 
