@@ -30,7 +30,6 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
         self.log_dir = log_dir
         self.save_path = os.path.join(log_dir, "best_model")
         self.best_mean_reward = -np.inf
-        self.reward_save = []
 
     def _init_callback(self) -> None:
         # Create folder if needed
@@ -50,7 +49,6 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
                     print(
                         f"Best mean reward: {self.best_mean_reward:.2f} - Last mean reward per episode: {mean_reward:.2f}"
                     )
-                    self.reward_save.append(self.best_mean_reward)
                 # New best model, you could save the agent here
                 if mean_reward > self.best_mean_reward:
                     self.best_mean_reward = mean_reward
@@ -61,11 +59,6 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
         return True
 
-    def plot_reward(self):
-        print("plot reward")
-        return self.reward_save
-
-
 def main(args):
     # for the reward log
     currpath = os.getcwd()
@@ -75,6 +68,8 @@ def main(args):
 
     env = gym.make(args.env_id, render=False if args.no_render else True)
     env = Monitor(env, log_dir)
+    callback = SaveOnBestTrainingRewardCallback(check_freq=100, log_dir=log_dir) #check frequency set for reward checking 
+
     her_kwargs = dict(
         online_sampling=True, n_sampled_goal=4, goal_selection_strategy="future", max_episode_length=100
     )
@@ -107,7 +102,7 @@ def main(args):
     )
 
     try:
-        model.learn(total_timesteps=2e6)
+        model.learn(total_timesteps=2e7, callback = callback)
     except Exception as e:
         print(f"Error: {e}")
     finally:
