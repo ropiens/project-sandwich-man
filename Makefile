@@ -11,8 +11,8 @@ setup:
 	python3 -m pip install -r requirements.txt
 	
 format:
-	black . --exclude external --line-length 104
-	isort . --sg external
+	black . --exclude venv --line-length 104
+	isort . --sg venv
 
 clean:
 	rm -rf venv

@@ -11,10 +11,14 @@ A project for a complex and long-horizon manipulation task especially focused on
 Command `make init` on the project repo.
 
 - the command clone all submodule-dependencies and install all python requirement modules.
+- after this command, you should source virtual environment using `source venv/bin/activate`.
 
 Then, run `make test` to check installation. If setup is succeeded, you can see the below environment.
 
 <img src = "https://user-images.githubusercontent.com/26274945/129780329-1aada415-089c-47a1-b79b-33e564b0d804.png" width="40%">
+
+## Manuals
+- [Scripts Manual](scripts/README.md)
 
 ## Project Abstract
 
