@@ -19,4 +19,4 @@ Then, run `make test` to check installation. If setup is succeeded, you can see 
 ## Project Abstract
 
 1. Survey
-   - [awesome-block-stacking-manipulation](https://github.com/ropiens/awesome-block-stacking-manipulation)
+   - [awesome-multi-step-manipulation](https://github.com/ropiens/awesome-multi-step-manipulation)
