@@ -26,7 +26,7 @@ Then, run `make test` to check installation. If setup is succeeded, you can see 
    - [awesome-multi-step-manipulation](https://github.com/ropiens/awesome-multi-step-manipulation)
 2. Single-step and Multi-goal Tasks on Panda-gym
    - [issue #3](https://github.com/ropiens/project-sandwich-man/issues/3)
-3. Multi-step and Multi-goal Tasks on Panda-gym
+3. Multi-step(hierarchical) and Multi-goal tasks on Panda-gym
    - [issue #8](https://github.com/ropiens/project-sandwich-man/issues/8)
 4. Goal Generation(Advanced)
    - Maybe in next project..!
