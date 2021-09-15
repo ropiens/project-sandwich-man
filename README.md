@@ -24,10 +24,8 @@ Then, run `make test` to check installation. If setup is succeeded, you can see 
 
 1. Problem Survey
    - [awesome-multi-step-manipulation](https://github.com/ropiens/awesome-multi-step-manipulation)
-2. Single-step and Multi-goal Tasks on Panda-gym
-   - [to-do-list](https://github.com/ropiens/project-sandwich-man/issues/3)
-3. Multi-step(hierarchical) and Multi-goal tasks on Panda-gym
-   - [to-do-list](https://github.com/ropiens/project-sandwich-man/issues/8)
+2. Single-step and Multi-goal Tasks on Panda-gym, [`to-do-list`](https://github.com/ropiens/project-sandwich-man/issues/3)
+3. Multi-step(hierarchical) and Multi-goal tasks on Panda-gym, [`to-do-list`](https://github.com/ropiens/project-sandwich-man/issues/8)
    - [hierarchical-actor-critic-pytorch](https://github.com/ropiens/hierarchical-actor-critic-pytorch)
    - [universal-option-framwork-pytorch](https://github.com/ropiens/universal-option-framwork-pytorch)
 4. Goal/subgoal Generation(Advanced)
