@@ -130,7 +130,7 @@ if __name__ == "__main__":
         "--no-render",
         type=bool,
         default=False,
-        help="gym render otpion",
+        help="gym render option",
     )
     args = parser.parse_args()
 
