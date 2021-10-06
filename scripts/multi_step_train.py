@@ -1,4 +1,5 @@
 import argparse
+import configparser
 import os
 
 import gym
@@ -6,10 +7,10 @@ import numpy as np
 import panda_gym
 import torch
 
-from agent import HAC
+from agent import HAC as trainer
 
 
-def main(args: argparse.ArgumentParser, config=None):
+def main(args: argparse.ArgumentParser, config: configparser.ConfigParser):
     """Main Function to launch multi-step trainer"""
     env = gym.make(args.env_id, render=False if args.no_render else True)
 
@@ -25,12 +26,13 @@ def main(args: argparse.ArgumentParser, config=None):
     )
 
     # Initialize HAC agent and setting parameters
-    agent = HAC(config)
+    agent = trainer.HAC(config)
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Multi-step RL Trainer using HAC")
+    parser = argparse.ArgumentParser(description="Multi-step RL Trainer Arguments using HAC")
+    config = configparser.ConfigParser()
 
     parser.add_argument(
         "--env-id",
@@ -46,5 +48,6 @@ if __name__ == "__main__":
         help="gym render option",
     )
     args = parser.parse_args()
+    config.read("./config/multi_step_agent.cfg")
 
-    main(args)
+    main(args, config)
