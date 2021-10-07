@@ -26,7 +26,7 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser):
     )
 
     # Initialize HAC agent and setting parameters
-    agent = trainer.HAC(config)
+    agent = trainer.HAC(env, config, render=False if args.no_render else True)
 
 
 if __name__ == "__main__":
@@ -48,6 +48,6 @@ if __name__ == "__main__":
         help="gym render option",
     )
     args = parser.parse_args()
-    config.read("./config/multi_step_agent.cfg")
+    config.read("agent/config/multi_step_agent.cfg")
 
     main(args, config)

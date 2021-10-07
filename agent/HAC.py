@@ -8,27 +8,31 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class HAC:
-    def __init__(self, config):
+    def __init__(self, env, config, render=False):
+        # init
+        self.set_parameters(config['HAC'])
 
-        # k_level, H, state_dim, action_dim, render, threshold, action_bounds, action_offset, state_bounds, state_offset, lr
-        self.set_parameters(config)
+        self.render = render
+        self.env = env
+        state_dim = env.observation_space.shape[0]
+        action_dim = env.action_space.shape[0]
+        action_bounds = 0.5*(self.action_clip_high - self.action_clip_low)
+        action_offset = 0.5*(self.action_clip_high + self.action_clip_low)
+        state_bounds = 0.5*(self.state_clip_high - self.state_clip_low)
+        state_offset = 0.5*(self.state_clip_high + self.state_clip_high)
 
         # adding lowest level
-        self.HAC = [DDPG(state_dim, action_dim, action_bounds, action_offset, lr, H)]
+        self.HAC = [DDPG(state_dim, action_dim, action_bounds, action_offset, self.lr, self.H)]
         self.replay_buffer = [ReplayBuffer()]
 
         # adding remaining levels
-        for _ in range(k_level - 1):
-            self.HAC.append(DDPG(state_dim, state_dim, state_bounds, state_offset, lr, H))
+        for _ in range(self.k_level - 1):
+            self.HAC.append(DDPG(state_dim, state_dim, state_bounds, state_offset, self.lr, self.H))
             self.replay_buffer.append(ReplayBuffer())
 
         # set some parameters
-        self.k_level = k_level
-        self.H = H
         self.action_dim = action_dim
         self.state_dim = state_dim
-        self.threshold = threshold
-        self.render = render
 
         # logging parameters
         self.goals = [None] * self.k_level
@@ -36,16 +40,24 @@ class HAC:
         self.timestep = 0
 
     def set_parameters(self, config):
+        # k_level, H, state_dim, action_dim, render, threshold, action_bounds, action_offset, state_bounds, state_offset, lr
         # lamda, gamma, action_clip_low, action_clip_high, state_clip_low, state_clip_high, exploration_action_noise, exploration_state_noise
 
-        self.lamda = lamda
-        self.gamma = gamma
-        self.action_clip_low = action_clip_low
-        self.action_clip_high = action_clip_high
-        self.state_clip_low = state_clip_low
-        self.state_clip_high = state_clip_high
-        self.exploration_action_noise = exploration_action_noise
-        self.exploration_state_noise = exploration_state_noise
+        self.k_level = config['k_level']
+        self.H = config['H']
+        self.threshold = config['threshold']
+
+        self.lr = config['lr']
+        self.lamda = config['lamda']
+        self.gamma = config['gamma']
+        
+
+        self.action_clip_low = config['action_clip_low']
+        self.action_clip_high = config['action_clip_high']
+        self.state_clip_low = config['state_clip_low']
+        self.state_clip_high = config['state_clip_high']
+        self.exploration_action_noise = config['exploration_action_noise']
+        self.exploration_state_noise = config['exploration_state_noise']
 
     def check_goal(self, state, goal, threshold):
         for i in range(self.state_dim):
@@ -53,7 +65,7 @@ class HAC:
                 return False
         return True
 
-    def run_HAC(self, env, i_level, state, goal, is_subgoal_test):
+    def run_HAC(self, i_level, state, goal, is_subgoal_test):
         next_state = None
         done = None
         goal_transitions = []
@@ -105,15 +117,15 @@ class HAC:
                         action = np.random.uniform(self.action_clip_low, self.action_clip_high)
 
                 # take primitive action
-                next_state, rew, done, _ = env.step(action)
+                next_state, rew, done, _ = self.env.step(action)
 
                 if self.render:
                     # env.render()
 
                     if self.k_level == 2:
-                        env.unwrapped.render_goal(self.goals[0], self.goals[1])
+                        self.env.unwrapped.render_goal(self.goals[0], self.goals[1])
                     elif self.k_level == 3:
-                        env.unwrapped.render_goal_2(self.goals[0], self.goals[1], self.goals[2])
+                        self.env.unwrapped.render_goal_2(self.goals[0], self.goals[1], self.goals[2])
 
                     for _ in range(1000000):
                         continue
