@@ -101,9 +101,5 @@ class DDPG:
         torch.save(self.critic.state_dict(), "%s/%s_crtic.pth" % (directory, name))
 
     def load(self, directory, name):
-        self.actor.load_state_dict(
-            torch.load("%s/%s_actor.pth" % (directory, name), map_location="cpu")
-        )
-        self.critic.load_state_dict(
-            torch.load("%s/%s_crtic.pth" % (directory, name), map_location="cpu")
-        )
+        self.actor.load_state_dict(torch.load("%s/%s_actor.pth" % (directory, name), map_location="cpu"))
+        self.critic.load_state_dict(torch.load("%s/%s_crtic.pth" % (directory, name), map_location="cpu"))

@@ -10,7 +10,15 @@ import torch
 from agent import HAC as trainer
 
 
-def main(args: argparse.ArgumentParser, config: configparser.ConfigParser):
+def set_config(env, config: configparser.ConfigParser):
+    cfg = config["Parameter"]
+    # cfg['threshold']
+
+    # cfg['exploration_action_noise'] = config['exploration_action_noise']
+    # cfg['exploration_state_noise'] = config['exploration_state_noise']
+
+
+def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> None:
     """Main Function to launch multi-step trainer"""
     env = gym.make(args.env_id, render=False if args.no_render else True)
 
@@ -26,7 +34,13 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser):
     )
 
     # Initialize HAC agent and setting parameters
+    set_config(env, config)
     agent = trainer.HAC(env, config, render=False if args.no_render else True)
+
+    max_episodes = 1000
+    save_episode = 10
+
+    agent.train(max_episodes, save_episode)
 
 
 if __name__ == "__main__":
@@ -37,7 +51,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--env-id",
         type=str,
-        default="PandaReach-v1",
+        default="PandaStack-v1",
         help="panda-gym environment default: PandaReach-v1, \
         option :[PandaReach-v1, PandaSlice-v1, PandaPush-v1, PandaPickAndPlace-v1, PandaStack-v1]",
     )
