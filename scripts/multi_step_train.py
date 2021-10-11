@@ -37,10 +37,7 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> No
     set_config(env, config)
     agent = trainer.HAC(env, config, render=False if args.no_render else True)
 
-    max_episodes = 1000
-    save_episode = 10
-
-    agent.train(max_episodes, save_episode)
+    agent.train(max_episodes=1000, save_episode=10)
 
 
 if __name__ == "__main__":

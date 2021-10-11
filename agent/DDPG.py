@@ -10,7 +10,7 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         # actor
         self.actor = nn.Sequential(
-            nn.Linear(state_dim + state_dim, 64),
+            nn.Linear(state_dim, 64),
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
@@ -22,7 +22,8 @@ class Actor(nn.Module):
         self.offset = offset
 
     def forward(self, state, goal):
-        return (self.actor(torch.cat([state, goal], 1)) * self.action_bounds) + self.offset
+        input_ = torch.cat([state, goal], 1)
+        return (self.actor(input_) * self.action_bounds) + self.offset
 
 
 class Critic(nn.Module):
@@ -30,7 +31,7 @@ class Critic(nn.Module):
         super(Critic, self).__init__()
         # UVFA critic
         self.critic = nn.Sequential(
-            nn.Linear(state_dim + action_dim + state_dim, 64),
+            nn.Linear(state_dim + action_dim, 64),
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
@@ -101,5 +102,9 @@ class DDPG:
         torch.save(self.critic.state_dict(), "%s/%s_crtic.pth" % (directory, name))
 
     def load(self, directory, name):
-        self.actor.load_state_dict(torch.load("%s/%s_actor.pth" % (directory, name), map_location="cpu"))
-        self.critic.load_state_dict(torch.load("%s/%s_crtic.pth" % (directory, name), map_location="cpu"))
+        self.actor.load_state_dict(
+            torch.load("%s/%s_actor.pth" % (directory, name), map_location="cpu")
+        )
+        self.critic.load_state_dict(
+            torch.load("%s/%s_crtic.pth" % (directory, name), map_location="cpu")
+        )

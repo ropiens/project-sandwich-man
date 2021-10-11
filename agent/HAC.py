@@ -14,7 +14,7 @@ class HAC:
         self.env = env
         self.set_parameters(config["Parameter"])
 
-        state_dim = env.observation_space["observation"].shape[0]
+        state_dim = env.observation_space["observation"].shape[0] + env.observation_space["desired_goal"].shape[0]
         action_dim = env.action_space.shape[0]
         action_bounds = 0.5 * (self.action_clip_high - self.action_clip_low)
         action_offset = 0.5 * (self.action_clip_high + self.action_clip_low)
@@ -57,11 +57,6 @@ class HAC:
         self.state_clip_low = self.env.observation_space["observation"].low
         self.state_clip_high = self.env.observation_space["observation"].high
 
-    def check_goal(self, state, goal, threshold):
-        for i in range(self.state_dim):
-            if abs(state[i] - goal[i]) > threshold[i]:
-                return False
-        return True
 
     def run_HAC(self, i_level, state, goal, is_subgoal_test):
         next_state = None
@@ -115,16 +110,16 @@ class HAC:
                 # take primitive action
                 next_state, rew, done, _ = self.env.step(action)
 
-                # if self.render:
-                # self.env.render()
+                if self.render:
+                    self.env.render()
 
-                # if self.k_level == 2:
-                #     self.env.unwrapped.render_goal(self.goals[0], self.goals[1])
-                # elif self.k_level == 3:
-                #     self.env.unwrapped.render_goal_2(self.goals[0], self.goals[1], self.goals[2])
+                    # if self.k_level == 2:
+                    #     self.env.unwrapped.render_goal(self.goals[0], self.goals[1])
+                    # elif self.k_level == 3:
+                    #     self.env.unwrapped.render_goal_2(self.goals[0], self.goals[1], self.goals[2])
 
-                # for _ in range(1000000):
-                #     continue
+                    for _ in range(1000000):
+                        continue
 
                 # this is for logging
                 self.reward += rew
@@ -162,7 +157,7 @@ class HAC:
 
         return next_state, done
 
-    def train(self, max_episodes=1000, save_episode=10):
+    def train(self, max_episodes, save_episode):
         # save trained models
         directory = "./preTrained/{}/{}level/".format("PandaStack", self.k_level)
         filename = "HAC_{}".format("PandaStack")
@@ -173,13 +168,9 @@ class HAC:
             self.timestep = 0
 
             state = self.env.reset()
+            print(state)
             # collecting experience in environment
-            last_state, done = self.run_HAC(self.env, self.k_level - 1, state, self.goal_state, False)
-
-            if self.check_goal(last_state, self.goal_state, self.threshold):
-                print("################ Solved! ################ ")
-                name = filename + "_solved"
-                self.save(directory, name)
+            last_state, done = self.run_HAC(self.k_level - 1, state['observation'], state['desired_goal'], False)
 
             # update all levels
             self.update(self.n_iter, self.batch_size)
