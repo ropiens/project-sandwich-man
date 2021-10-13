@@ -77,11 +77,11 @@ class HAC:
         self.goals[i_level] = goal
 
         # H attempts
-        for _ in range(self.H):
+        for iter in range(self.H):
             # if this is a subgoal test, then next/lower level goal has to be a subgoal test
             is_next_subgoal_test = is_subgoal_test
 
-            print(i_level, state, goal)
+            print(f"====\nlev:{i_level}\niter:{iter}\n state:{state}\n goal:{goal}\n====")
             action = self.HAC[i_level].select_action(state, goal)
 
             #   <================ high level policy ================>
@@ -92,7 +92,6 @@ class HAC:
                         action = action + np.random.normal(0, self.exploration_goal_noise)
                         action = action.clip(self.goal_clip_low, self.goal_clip_high)
                     else:
-                        print(self.goal_clip_high)
                         action = np.random.uniform(self.goal_clip_low, self.goal_clip_high)
 
                 # Determine whether to test subgoal (action)
@@ -101,6 +100,7 @@ class HAC:
 
                 # Pass subgoal to lower level
                 next_state, done = self.run_HAC(i_level - 1, state, action, is_next_subgoal_test)
+                print(f"next_state:{next_state}")
 
                 # if subgoal was tested but not achieved, add subgoal testing transition
                 if is_next_subgoal_test and not self.check_goal(action, next_state):
@@ -138,20 +138,19 @@ class HAC:
                 self.timestep += 1
 
             #   <================ finish one step/transition ================>
-
             # check if goal is achieved
             goal_achieved = self.check_goal(next_state["achieved_goal"], goal)
 
             # hindsight action transition
             if goal_achieved:
-                self.replay_buffer[i_level].add((state, action, 0.0, next_state, goal, 0.0, float(done)))
+                self.replay_buffer[i_level].add((state, action, 0.0, next_state["observation"], goal, 0.0, float(done)))
             else:
-                self.replay_buffer[i_level].add((state, action, -1.0, next_state, goal, self.gamma, float(done)))
+                self.replay_buffer[i_level].add((state, action, -1.0, next_state["observation"], goal, self.gamma, float(done)))
 
             # copy for goal transition
-            goal_transitions.append([state, action, -1.0, next_state, None, self.gamma, float(done)])
+            goal_transitions.append([state, action, -1.0, next_state["observation"], None, self.gamma, float(done)])
 
-            state = next_state
+            state = next_state["observation"]
 
             if done or goal_achieved:
                 break
@@ -164,7 +163,7 @@ class HAC:
         goal_transitions[-1][5] = 0.0
         for transition in goal_transitions:
             # last state is goal for all transitions
-            transition[4] = next_state
+            transition[4] = next_state["achieved_goal"]
             self.replay_buffer[i_level].add(tuple(transition))
 
         return next_state, done
