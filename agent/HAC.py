@@ -22,12 +22,12 @@ class HAC:
         goal_offset = 0.5 * (self.goal_clip_high + self.goal_clip_low)
 
         # adding lowest level
-        self.HAC = [DDPG(self.state_dim, self.action_dim, action_bounds, action_offset, self.lr, self.H)]
+        self.HAC = [DDPG(self.state_dim, self.goal_dim, self.action_dim, action_bounds, action_offset, self.lr, self.H)]
         self.replay_buffer = [ReplayBuffer()]
 
         # adding remaining levels
         for _ in range(self.k_level - 1):
-            self.HAC.append(DDPG(self.state_dim, self.goal_dim, goal_bounds, goal_offset, self.lr, self.H))
+            self.HAC.append(DDPG(self.state_dim, self.goal_dim, self.goal_dim, goal_bounds, goal_offset, self.lr, self.H))
             self.replay_buffer.append(ReplayBuffer())
 
         # logging parameters
@@ -37,7 +37,7 @@ class HAC:
 
     def env_parameters(self):
         # environment dependent parameters
-        self.state_dim = self.env.observation_space["observation"].shape[0] + self.env.observation_space["desired_goal"].shape[0]
+        self.state_dim = self.env.observation_space["observation"].shape[0]
         self.goal_dim = self.env.observation_space["desired_goal"].shape[0]
         self.action_dim = self.env.action_space.shape[0]
 

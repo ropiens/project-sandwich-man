@@ -6,11 +6,11 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim, action_bounds, offset):
+    def __init__(self, state_dim, goal_dim, action_dim, action_bounds, offset):
         super(Actor, self).__init__()
         # actor
         self.actor = nn.Sequential(
-            nn.Linear(state_dim, 64),
+            nn.Linear(state_dim + goal_dim, 64),
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
@@ -29,11 +29,11 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, state_dim, action_dim, H):
+    def __init__(self, state_dim, goal_dim, action_dim, H):
         super(Critic, self).__init__()
         # UVFA critic
         self.critic = nn.Sequential(
-            nn.Linear(state_dim + action_dim, 64),
+            nn.Linear(state_dim + goal_dim + action_dim, 64),
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
@@ -48,12 +48,12 @@ class Critic(nn.Module):
 
 
 class DDPG:
-    def __init__(self, state_dim, action_dim, action_bounds, offset, lr, H):
+    def __init__(self, state_dim, goal_dim, action_dim, action_bounds, offset, lr, H):
 
-        self.actor = Actor(state_dim, action_dim, action_bounds, offset).to(device)
+        self.actor = Actor(state_dim, goal_dim, action_dim, action_bounds, offset).to(device)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr)
 
-        self.critic = Critic(state_dim, action_dim, H).to(device)
+        self.critic = Critic(state_dim, goal_dim, action_dim, H).to(device)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=lr)
 
         self.mseLoss = torch.nn.MSELoss()
