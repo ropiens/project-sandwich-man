@@ -12,51 +12,53 @@ class HAC:
         # init
         self.render = render
         self.env = env
+
+        self.env_parameters()
         self.set_parameters(config["Parameter"])
 
-        state_dim = env.observation_space["observation"].shape[0] + env.observation_space["desired_goal"].shape[0]
-        action_dim = env.action_space.shape[0]
         action_bounds = 0.5 * (self.action_clip_high - self.action_clip_low)
         action_offset = 0.5 * (self.action_clip_high + self.action_clip_low)
-        state_bounds = 0.5 * (self.state_clip_high - self.state_clip_low)
-        state_offset = 0.5 * (self.state_clip_high + self.state_clip_high)
+        goal_bounds = 0.5 * (self.goal_clip_high - self.goal_clip_low)
+        goal_offset = 0.5 * (self.goal_clip_high + self.goal_clip_low)
 
         # adding lowest level
-        self.HAC = [DDPG(state_dim, action_dim, action_bounds, action_offset, self.lr, self.H)]
+        self.HAC = [DDPG(self.state_dim, self.action_dim, action_bounds, action_offset, self.lr, self.H)]
         self.replay_buffer = [ReplayBuffer()]
 
         # adding remaining levels
         for _ in range(self.k_level - 1):
-            self.HAC.append(DDPG(state_dim, state_dim, state_bounds, state_offset, self.lr, self.H))
+            self.HAC.append(DDPG(self.state_dim, self.goal_dim, goal_bounds, goal_offset, self.lr, self.H))
             self.replay_buffer.append(ReplayBuffer())
-
-        # set some parameters
-        self.action_dim = action_dim
-        self.state_dim = state_dim
 
         # logging parameters
         self.goals = [None] * self.k_level
         self.reward = 0
         self.timestep = 0
 
-    def set_parameters(self, config):
-        # k_level, H, state_dim, action_dim, render, threshold, action_bounds, action_offset, state_bounds, state_offset, lr
-        # lamda, gamma, action_clip_low, action_clip_high, state_clip_low, state_clip_high, exploration_action_noise, exploration_state_noise
+    def env_parameters(self):
+        # environment dependent parameters
+        self.state_dim = self.env.observation_space["observation"].shape[0] + self.env.observation_space["desired_goal"].shape[0]
+        self.goal_dim = self.env.observation_space["desired_goal"].shape[0]
+        self.action_dim = self.env.action_space.shape[0]
 
+        self.action_clip_low = self.env.action_space.low
+        self.action_clip_high = self.env.action_space.high
+        self.goal_clip_low = self.env.observation_space["desired_goal"].low
+        self.goal_clip_high = self.env.observation_space["desired_goal"].high
+
+    def set_parameters(self, config):
+        # HAC parameters
         self.k_level = int(config["k_level"])
         self.H = int(config["H"])
         self.lamda = float(config["lamda"])
-
+        # DDPG parameters
         self.lr = float(config["lr"])
         self.gamma = float(config["gamma"])
         self.n_iter = int(config["n_iter"])
         self.batch_size = int(config["batch_size"])
 
-        self.action_clip_low = self.env.action_space.low
-        self.action_clip_high = self.env.action_space.high
-        self.state_clip_low = self.env.observation_space["observation"].low
-        self.state_clip_high = self.env.observation_space["observation"].high
-
+        self.exploration_action_noise = np.array([float(config["exploration_action_noise"])]*self.action_dim)
+        self.exploration_goal_noise = np.array([float(config["exploration_goal_noise"])]*self.goal_dim)
 
     def run_HAC(self, i_level, state, goal, is_subgoal_test):
         next_state = None
@@ -71,6 +73,7 @@ class HAC:
             # if this is a subgoal test, then next/lower level goal has to be a subgoal test
             is_next_subgoal_test = is_subgoal_test
 
+            print(i_level, state, goal)
             action = self.HAC[i_level].select_action(state, goal)
 
             #   <================ high level policy ================>
@@ -78,10 +81,11 @@ class HAC:
                 # add noise or take random action if not subgoal testing
                 if not is_subgoal_test:
                     if np.random.random_sample() > 0.2:
-                        action = action + np.random.normal(0, self.exploration_state_noise)
-                        action = action.clip(self.state_clip_low, self.state_clip_high)
+                        action = action + np.random.normal(0, self.exploration_goal_noise)
+                        action = action.clip(self.goal_clip_low, self.goal_clip_high)
                     else:
-                        action = np.random.uniform(self.state_clip_low, self.state_clip_high)
+                        print(self.goal_clip_high)
+                        action = np.random.uniform(self.goal_clip_low, self.goal_clip_high)
 
                 # Determine whether to test subgoal (action)
                 if np.random.random_sample() < self.lamda:
@@ -168,7 +172,6 @@ class HAC:
             self.timestep = 0
 
             state = self.env.reset()
-            print(state)
             # collecting experience in environment
             last_state, done = self.run_HAC(self.k_level - 1, state['observation'], state['desired_goal'], False)
 

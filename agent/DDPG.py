@@ -22,8 +22,10 @@ class Actor(nn.Module):
         self.offset = offset
 
     def forward(self, state, goal):
-        input_ = torch.cat([state, goal], 1)
-        return (self.actor(input_) * self.action_bounds) + self.offset
+        with torch.no_grad():
+            input_ = torch.cat([state, goal], 1)
+            print(state.shape, goal.shape)
+            return (self.actor(input_) * self.action_bounds) + self.offset
 
 
 class Critic(nn.Module):

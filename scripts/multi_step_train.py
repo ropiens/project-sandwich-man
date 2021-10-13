@@ -12,11 +12,7 @@ from agent import HAC as trainer
 
 def set_config(env, config: configparser.ConfigParser):
     cfg = config["Parameter"]
-    # cfg['threshold']
-
-    # cfg['exploration_action_noise'] = config['exploration_action_noise']
-    # cfg['exploration_state_noise'] = config['exploration_state_noise']
-
+    # cfg['threshold'] = 
 
 def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> None:
     """Main Function to launch multi-step trainer"""
