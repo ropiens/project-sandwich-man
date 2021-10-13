@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from agent.DDPG import DDPG
-from agent.utils import ReplayBuffer
+from agent.utils import ReplayBuffer, distance
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -43,8 +43,8 @@ class HAC:
 
         self.action_clip_low = self.env.action_space.low
         self.action_clip_high = self.env.action_space.high
-        self.goal_clip_low = self.env.observation_space["desired_goal"].low
-        self.goal_clip_high = self.env.observation_space["desired_goal"].high
+        self.goal_clip_low = np.concatenate((self.env.task.goal_range_low, self.env.task.goal_range_low))
+        self.goal_clip_high = np.concatenate((self.env.task.goal_range_high, self.env.task.goal_range_high))
 
     def set_parameters(self, config):
         # HAC parameters
@@ -57,9 +57,17 @@ class HAC:
         self.n_iter = int(config["n_iter"])
         self.batch_size = int(config["batch_size"])
 
+        self.threshold = float(config["threshold"])
+
+        # exploration noise
         self.exploration_action_noise = np.array([float(config["exploration_action_noise"])]*self.action_dim)
         self.exploration_goal_noise = np.array([float(config["exploration_goal_noise"])]*self.goal_dim)
 
+    def check_goal(self, achieved_goal, desired_goal):
+        # must be vectorized !!
+        d = distance(achieved_goal, desired_goal)
+        return (d < self.threshold).astype(np.float32)
+        
     def run_HAC(self, i_level, state, goal, is_subgoal_test):
         next_state = None
         done = None
@@ -95,7 +103,7 @@ class HAC:
                 next_state, done = self.run_HAC(i_level - 1, state, action, is_next_subgoal_test)
 
                 # if subgoal was tested but not achieved, add subgoal testing transition
-                if is_next_subgoal_test and not self.check_goal(action, next_state, self.threshold):
+                if is_next_subgoal_test and not self.check_goal(action, next_state):
                     self.replay_buffer[i_level].add((state, action, -self.H, next_state, goal, 0.0, float(done)))
 
                 # for hindsight action transition
@@ -132,7 +140,7 @@ class HAC:
             #   <================ finish one step/transition ================>
 
             # check if goal is achieved
-            goal_achieved = self.check_goal(next_state, goal, self.threshold)
+            goal_achieved = self.check_goal(next_state["achieved_goal"], goal)
 
             # hindsight action transition
             if goal_achieved:

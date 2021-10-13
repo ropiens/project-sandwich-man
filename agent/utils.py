@@ -1,6 +1,11 @@
 import numpy as np
 
 
+def distance(a, b):
+    assert a.shape == b.shape
+    return np.linalg.norm(a - b, axis=-1)
+
+
 class ReplayBuffer:
     def __init__(self, max_size=5e5):
         self.buffer = []
