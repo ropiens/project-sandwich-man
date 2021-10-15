@@ -81,7 +81,7 @@ class HAC:
             # if this is a subgoal test, then next/lower level goal has to be a subgoal test
             is_next_subgoal_test = is_subgoal_test
 
-            print(f"====\nlev:{i_level}\niter:{iter}\n state:{state}\n goal:{goal}\n====")
+            print(f'\033[{i_level+40}m'+f"lev:{i_level}\niter:{iter}\n state:{state}\n goal:{goal}"+'\033[0m')
             action = self.HAC[i_level].select_action(state, goal)
 
             #   <================ high level policy ================>
@@ -101,13 +101,15 @@ class HAC:
                 # Pass subgoal to lower level
                 next_state, done = self.run_HAC(i_level - 1, state, action, is_next_subgoal_test)
                 print(f"next_state:{next_state}")
+                print(f"action: {action}")
+
 
                 # if subgoal was tested but not achieved, add subgoal testing transition
-                if is_next_subgoal_test and not self.check_goal(action, next_state):
-                    self.replay_buffer[i_level].add((state, action, -self.H, next_state, goal, 0.0, float(done)))
+                if is_next_subgoal_test and not self.check_goal(next_state["achieved_goal"], action):
+                    self.replay_buffer[i_level].add((state, action, -self.H, next_state["observation"], goal, 0.0, float(done)))
 
                 # for hindsight action transition
-                action = next_state
+                action = next_state["achieved_goal"]
 
             #   <================ low level policy ================>
             else:
