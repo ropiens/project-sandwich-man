@@ -1,24 +1,45 @@
 import argparse
 import configparser
 import os
+from ast import literal_eval
 
 import gym
+from gym.core import Env
 import numpy as np
 import panda_gym
 import torch
 
 from agent import HAC as trainer
 
+def visualize_workspace(env: Env, config: configparser.ConfigParser)-> None:
+    """ 
+    Visualize workspace(sub-goal range)
+    
+    Args:
+        env(Env): gym environment(including robot & task)
 
-def set_config(env, config: configparser.ConfigParser):
-    cfg = config["Parameter"]
-    # cfg['threshold'] = 
+        config(ConfigParser): parsed data(parameters) from configuration file
+    """
+    config = config["Parameter"]
+    workspace_high = literal_eval(config["workspace_high"])
 
-def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> None:
-    """Main Function to launch multi-step trainer"""
-    env = gym.make(args.env_id, render=False if args.no_render else True)
+    env.sim.create_box(
+        body_name="workspace",
+        half_extents=[workspace_high[0]*2, workspace_high[1]*2, workspace_high[1]],
+        mass=0,
+        position=[0.0, 0.0, workspace_high[1]],
+        specular_color=[0.0, 0.0, 0.0],
+        rgba_color=[0.0, 0.5, 0.5, 0.2],
+        ghost=True,
+    )
 
-    # Add our Landmark
+def add_landmark(env: Env)-> None:
+    """
+    Add Ropiens Landmark on gym env
+
+    Args:
+        env(Env): gym environment(including robot & task)
+    """
     p = env.sim.physics_client
     path = os.path.abspath(os.path.join(__file__, "../.."))
     p.loadURDF(
@@ -29,8 +50,24 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> No
         useFixedBase=1,
     )
 
+def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> None:
+    """
+    Main Function to launch multi-step trainer
+
+    Args:
+        args(ArgumentParser): some arguments from users(including env_id, render etc.)
+
+        config(ConfigParser): parsed data(parameters) from configuration file
+    """
+    env = gym.make(args.env_id, render=False if args.no_render else True)
+
+    # Add our Landmark
+    add_landmark(env)
+
+    # Visualize workspace
+    visualize_workspace(env, config)
+
     # Initialize HAC agent and setting parameters
-    set_config(env, config)
     agent = trainer.HAC(env, config, render=False if args.no_render else True)
 
     agent.train(max_episodes=1000, save_episode=10)

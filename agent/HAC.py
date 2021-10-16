@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from ast import literal_eval
 
 from agent.DDPG import DDPG
 from agent.utils import ReplayBuffer, distance
@@ -12,8 +13,7 @@ class HAC:
         # init
         self.render = render
         self.env = env
-
-        self.env_parameters()
+        
         self.set_parameters(config["Parameter"])
 
         action_bounds = 0.5 * (self.action_clip_high - self.action_clip_low)
@@ -35,7 +35,7 @@ class HAC:
         self.reward = 0
         self.timestep = 0
 
-    def env_parameters(self):
+    def set_parameters(self, config):
         # environment dependent parameters
         self.state_dim = self.env.observation_space["observation"].shape[0]
         self.goal_dim = self.env.observation_space["desired_goal"].shape[0]
@@ -43,10 +43,19 @@ class HAC:
 
         self.action_clip_low = self.env.action_space.low
         self.action_clip_high = self.env.action_space.high
-        self.goal_clip_low = np.concatenate((self.env.task.goal_range_low, self.env.task.goal_range_low))
-        self.goal_clip_high = np.concatenate((self.env.task.goal_range_high, self.env.task.goal_range_high))
+        self.goal_clip_low = np.concatenate(
+                (
+                np.array(literal_eval(config["workspace_low"])), 
+                np.array(literal_eval(config["workspace_low"]))
+                )
+            )
+        self.goal_clip_high = np.concatenate(
+                (
+                np.array(literal_eval(config["workspace_high"])), 
+                np.array(literal_eval(config["workspace_high"]))
+                )
+            )
 
-    def set_parameters(self, config):
         # HAC parameters
         self.k_level = int(config["k_level"])
         self.H = int(config["H"])
