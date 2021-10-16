@@ -73,7 +73,15 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> No
     # Initialize HAC agent and setting parameters
     agent = trainer.HAC(env, config, render=False if args.no_render else True)
 
-    agent.train(max_episodes=1000, save_episode=10)
+    # save_path of trained models
+    directory = f"{os.getcwd()}/pretrained/{args.env_id}/"
+    filename = f"HAC_{args.env_id}"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    save_path = (directory, filename)
+
+    # train
+    agent.train(max_episodes=1000, save_episode=10, save_path=save_path)
 
 
 if __name__ == "__main__":

@@ -160,7 +160,6 @@ class HAC:
 
                 if self.render:
                     self.env.render()
-
                     self.render_subgoal(goal)
 
                     for _ in range(1000000):
@@ -202,10 +201,7 @@ class HAC:
 
         return next_state, done
 
-    def train(self, max_episodes, save_episode):
-        # save trained models
-        directory = "./preTrained/{}/{}level/".format("PandaStack", self.k_level)
-        filename = "HAC_{}".format("PandaStack")
+    def train(self, max_episodes, save_episode, save_path=("", "")):
 
         # training procedure
         for i_episode in range(1, max_episodes + 1):
@@ -220,7 +216,7 @@ class HAC:
             self.update(self.n_iter, self.batch_size)
 
             if i_episode % save_episode == 0:
-                self.save(directory, filename)
+                self.save(save_path)
 
             print("Episode: {}\t Reward: {}".format(i_episode, self.reward))
 
@@ -229,10 +225,12 @@ class HAC:
             print(f"level:{i}, UPDATE!")
             self.HAC[i].update(self.replay_buffer[i], n_iter, batch_size)
 
-    def save(self, directory, name):
+    def save(self, save_path):
+        directory, name = save_path
         for i in range(self.k_level):
             self.HAC[i].save(directory, name + "_level_{}".format(i))
 
-    def load(self, directory, name):
+    def load(self, save_path):
+        directory, name = save_path
         for i in range(self.k_level):
             self.HAC[i].load(directory, name + "_level_{}".format(i))

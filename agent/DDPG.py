@@ -24,7 +24,8 @@ class Actor(nn.Module):
     def forward(self, state, goal):
         with torch.no_grad():
             input_ = torch.cat([state, goal], 1)
-            return (self.actor(input_) * self.action_bounds) + self.offset
+            action = (self.actor(input_).detach().cpu().data.numpy() * self.action_bounds) + self.offset
+        return torch.FloatTensor(action).to(device)
 
 
 class Critic(nn.Module):
@@ -100,8 +101,6 @@ class DDPG:
 
     def save(self, directory, name):
         torch.save(self.actor.state_dict(), "%s/%s_actor.pth" % (directory, name))
-        torch.save(self.critic.state_dict(), "%s/%s_crtic.pth" % (directory, name))
 
     def load(self, directory, name):
         self.actor.load_state_dict(torch.load("%s/%s_actor.pth" % (directory, name), map_location="cpu"))
-        self.critic.load_state_dict(torch.load("%s/%s_crtic.pth" % (directory, name), map_location="cpu"))
