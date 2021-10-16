@@ -36,6 +36,9 @@ class HAC:
         self.reward = 0
         self.timestep = 0
 
+        # for subgoal viz
+        self.subgoal_1, self.subgoal_2 = None, None
+
     def set_parameters(self, config):
         # environment dependent parameters
         self.state_dim = self.env.observation_space["observation"].shape[0]
@@ -66,6 +69,36 @@ class HAC:
         # exploration noise
         self.exploration_action_noise = np.array([float(config["exploration_action_noise"])] * self.action_dim)
         self.exploration_goal_noise = np.array([float(config["exploration_goal_noise"])] * self.goal_dim)
+
+    def render_subgoal(self, subgoal):
+        p = self.env.sim.physics_client
+
+        if not self.subgoal_1 is None:
+            p.removeBody(self.subgoal_1)
+        if not self.subgoal_2 is None:
+            p.removeBody(self.subgoal_2)
+
+        # visualize subgoal_1
+        sphere_1 = p.createVisualShape(
+            shapeType=p.GEOM_SPHERE,
+            radius=0.02,
+            rgbaColor=[0.9, 0.1, 0.1, 0.3],
+            specularColor=[0, 0, 0],
+            visualFramePosition=subgoal[:3],
+        )
+
+        self.subgoal_1 = p.createMultiBody(baseVisualShapeIndex=sphere_1)
+
+        # visualize subgoal_2
+        sphere_2 = p.createVisualShape(
+            shapeType=p.GEOM_SPHERE,
+            radius=0.02,
+            rgbaColor=[0.1, 0.9, 0.1, 0.3],
+            specularColor=[0, 0, 0],
+            visualFramePosition=subgoal[3:],
+        )
+
+        self.subgoal_2 = p.createMultiBody(baseVisualShapeIndex=sphere_2)
 
     def check_goal(self, achieved_goal, desired_goal):
         # must be vectorized !!
@@ -104,8 +137,6 @@ class HAC:
 
                 # Pass subgoal to lower level
                 next_state, done = self.run_HAC(i_level - 1, state, action, is_next_subgoal_test)
-                print(f"next_state:{next_state}")
-                print(f"action: {action}")
 
                 # if subgoal was tested but not achieved, add subgoal testing transition
                 if is_next_subgoal_test and not self.check_goal(next_state["achieved_goal"], action):
@@ -130,10 +161,7 @@ class HAC:
                 if self.render:
                     self.env.render()
 
-                    # if self.k_level == 2:
-                    #     self.env.unwrapped.render_goal(self.goals[0], self.goals[1])
-                    # elif self.k_level == 3:
-                    #     self.env.unwrapped.render_goal_2(self.goals[0], self.goals[1], self.goals[2])
+                    self.render_subgoal(goal)
 
                     for _ in range(1000000):
                         continue
@@ -158,6 +186,7 @@ class HAC:
             state = next_state["observation"]
 
             if done or goal_achieved:
+                print(f"done: {done}, goal_achieved: {goal_achieved}")
                 break
 
         #   <================ finish H attempts ================>
@@ -197,6 +226,7 @@ class HAC:
 
     def update(self, n_iter, batch_size):
         for i in range(self.k_level):
+            print(f"level:{i}, UPDATE!")
             self.HAC[i].update(self.replay_buffer[i], n_iter, batch_size)
 
     def save(self, directory, name):
