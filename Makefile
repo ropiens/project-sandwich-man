@@ -12,7 +12,7 @@ setup:
 	python setup.py install
 	
 format:
-	black . --exclude venv --line-length 104
+	black . --exclude venv --line-length 128
 	isort . --sg venv
 
 clean:

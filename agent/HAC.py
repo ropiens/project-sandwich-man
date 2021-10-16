@@ -1,6 +1,7 @@
+from ast import literal_eval
+
 import numpy as np
 import torch
-from ast import literal_eval
 
 from agent.DDPG import DDPG
 from agent.utils import ReplayBuffer, distance
@@ -13,7 +14,7 @@ class HAC:
         # init
         self.render = render
         self.env = env
-        
+
         self.set_parameters(config["Parameter"])
 
         action_bounds = 0.5 * (self.action_clip_high - self.action_clip_low)
@@ -44,17 +45,11 @@ class HAC:
         self.action_clip_low = self.env.action_space.low
         self.action_clip_high = self.env.action_space.high
         self.goal_clip_low = np.concatenate(
-                (
-                np.array(literal_eval(config["workspace_low"])), 
-                np.array(literal_eval(config["workspace_low"]))
-                )
-            )
+            (np.array(literal_eval(config["workspace_low"])), np.array(literal_eval(config["workspace_low"])))
+        )
         self.goal_clip_high = np.concatenate(
-                (
-                np.array(literal_eval(config["workspace_high"])), 
-                np.array(literal_eval(config["workspace_high"]))
-                )
-            )
+            (np.array(literal_eval(config["workspace_high"])), np.array(literal_eval(config["workspace_high"])))
+        )
 
         # HAC parameters
         self.k_level = int(config["k_level"])
@@ -69,14 +64,14 @@ class HAC:
         self.threshold = float(config["threshold"])
 
         # exploration noise
-        self.exploration_action_noise = np.array([float(config["exploration_action_noise"])]*self.action_dim)
-        self.exploration_goal_noise = np.array([float(config["exploration_goal_noise"])]*self.goal_dim)
+        self.exploration_action_noise = np.array([float(config["exploration_action_noise"])] * self.action_dim)
+        self.exploration_goal_noise = np.array([float(config["exploration_goal_noise"])] * self.goal_dim)
 
     def check_goal(self, achieved_goal, desired_goal):
         # must be vectorized !!
         d = distance(achieved_goal, desired_goal)
         return (d < self.threshold).astype(np.float32)
-        
+
     def run_HAC(self, i_level, state, goal, is_subgoal_test):
         next_state = None
         done = None
@@ -90,7 +85,7 @@ class HAC:
             # if this is a subgoal test, then next/lower level goal has to be a subgoal test
             is_next_subgoal_test = is_subgoal_test
 
-            print(f'\033[{i_level+40}m'+f"lev:{i_level}\niter:{iter}\n state:{state}\n goal:{goal}"+'\033[0m')
+            print(f"\033[{i_level+40}m" + f"lev:{i_level}\niter:{iter}\n state:{state}\n goal:{goal}" + "\033[0m")
             action = self.HAC[i_level].select_action(state, goal)
 
             #   <================ high level policy ================>
@@ -111,7 +106,6 @@ class HAC:
                 next_state, done = self.run_HAC(i_level - 1, state, action, is_next_subgoal_test)
                 print(f"next_state:{next_state}")
                 print(f"action: {action}")
-
 
                 # if subgoal was tested but not achieved, add subgoal testing transition
                 if is_next_subgoal_test and not self.check_goal(next_state["achieved_goal"], action):
@@ -191,7 +185,7 @@ class HAC:
 
             state = self.env.reset()
             # collecting experience in environment
-            last_state, done = self.run_HAC(self.k_level - 1, state['observation'], state['desired_goal'], False)
+            last_state, done = self.run_HAC(self.k_level - 1, state["observation"], state["desired_goal"], False)
 
             # update all levels
             self.update(self.n_iter, self.batch_size)

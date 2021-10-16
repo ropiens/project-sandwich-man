@@ -4,17 +4,18 @@ import os
 from ast import literal_eval
 
 import gym
-from gym.core import Env
 import numpy as np
 import panda_gym
 import torch
+from gym.core import Env
 
 from agent import HAC as trainer
 
-def visualize_workspace(env: Env, config: configparser.ConfigParser)-> None:
-    """ 
+
+def visualize_workspace(env: Env, config: configparser.ConfigParser) -> None:
+    """
     Visualize workspace(sub-goal range)
-    
+
     Args:
         env(Env): gym environment(including robot & task)
 
@@ -25,7 +26,7 @@ def visualize_workspace(env: Env, config: configparser.ConfigParser)-> None:
 
     env.sim.create_box(
         body_name="workspace",
-        half_extents=[workspace_high[0]*2, workspace_high[1]*2, workspace_high[1]],
+        half_extents=[workspace_high[0] * 2, workspace_high[1] * 2, workspace_high[1]],
         mass=0,
         position=[0.0, 0.0, workspace_high[1]],
         specular_color=[0.0, 0.0, 0.0],
@@ -33,7 +34,8 @@ def visualize_workspace(env: Env, config: configparser.ConfigParser)-> None:
         ghost=True,
     )
 
-def add_landmark(env: Env)-> None:
+
+def add_landmark(env: Env) -> None:
     """
     Add Ropiens Landmark on gym env
 
@@ -49,6 +51,7 @@ def add_landmark(env: Env)-> None:
         globalScaling=3,
         useFixedBase=1,
     )
+
 
 def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> None:
     """
