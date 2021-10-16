@@ -105,7 +105,7 @@ class HAC:
         d = distance(achieved_goal, desired_goal)
         return (d < self.threshold).astype(np.float32)
 
-    def run_HAC(self, i_level, state, goal, is_subgoal_test):
+    def run_HAC(self, i_level, state, goal, is_subgoal_test, debug=False):
         next_state = None
         done = None
         goal_transitions = []
@@ -118,7 +118,8 @@ class HAC:
             # if this is a subgoal test, then next/lower level goal has to be a subgoal test
             is_next_subgoal_test = is_subgoal_test
 
-            print(f"\033[{i_level+40}m" + f"lev:{i_level}\niter:{iter}\n state:{state}\n goal:{goal}" + "\033[0m")
+            if debug:
+                print(f"\033[{i_level+40}m" + f"lev:{i_level}\niter:{iter}\n state:{state}\n goal:{goal}" + "\033[0m")
             action = self.HAC[i_level].select_action(state, goal)
 
             #   <================ high level policy ================>
@@ -185,7 +186,6 @@ class HAC:
             state = next_state["observation"]
 
             if done or goal_achieved:
-                print(f"done: {done}, goal_achieved: {goal_achieved}")
                 break
 
         #   <================ finish H attempts ================>
@@ -222,7 +222,6 @@ class HAC:
 
     def update(self, n_iter, batch_size):
         for i in range(self.k_level):
-            print(f"level:{i}, UPDATE!")
             self.HAC[i].update(self.replay_buffer[i], n_iter, batch_size)
 
     def save(self, save_path):

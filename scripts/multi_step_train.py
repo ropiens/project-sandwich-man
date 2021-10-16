@@ -30,7 +30,7 @@ def visualize_workspace(env: Env, config: configparser.ConfigParser) -> None:
         mass=0,
         position=[0.0, 0.0, workspace_high[1]],
         specular_color=[0.0, 0.0, 0.0],
-        rgba_color=[0.0, 0.5, 0.5, 0.2],
+        rgba_color=[0.0, 0.5, 0.5, 0.15],
         ghost=True,
     )
 
