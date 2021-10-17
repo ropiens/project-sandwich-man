@@ -94,8 +94,9 @@ if __name__ == "__main__":
         "--env-id",
         type=str,
         default="PandaStack-v1",
-        help="panda-gym environment default: PandaReach-v1, \
-        option :[PandaReach-v1, PandaSlice-v1, PandaPush-v1, PandaPickAndPlace-v1, PandaStack-v1]",
+        help="Environment default: PandaStack-v1, \
+        option :[PandaReach-v1(not allowed), PandaSlice-v1(not allowed), \
+        PandaPush-v1(not allowed), PandaPickAndPlace-v1(not allowed), PandaStack-v1]",
     )
     parser.add_argument(
         "--no-render",
@@ -104,6 +105,10 @@ if __name__ == "__main__":
         help="gym render option",
     )
     args = parser.parse_args()
+
+    if not args.env_id == "PandaStack-v1":
+        print(f"\033[{41}m" + "\nNot allowed now. you can choose 'PandaStack-v1' only.\n" + "\033[0m")
+        args.env_id = "PandaStack-v1"
 
     path = os.path.abspath(os.path.join(__file__, "../.."))
     config.read(f"{path}/agent/config/multi_step_agent.cfg")
