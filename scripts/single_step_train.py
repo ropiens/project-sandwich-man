@@ -46,9 +46,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
                 mean_reward = np.mean(y[-10:])
                 if self.verbose > 0:
                     print(f"Num timesteps: {self.num_timesteps}")
-                    print(
-                        f"Best mean reward: {self.best_mean_reward:.2f} - Last mean reward per episode: {mean_reward:.2f}"
-                    )
+                    print(f"Best mean reward: {self.best_mean_reward:.2f} - Last mean reward per episode: {mean_reward:.2f}")
                 # New best model, you could save the agent here
                 if mean_reward > self.best_mean_reward:
                     self.best_mean_reward = mean_reward
@@ -69,13 +67,9 @@ def main(args):
 
     env = gym.make(args.env_id, render=False if args.no_render else True)
     env = Monitor(env, log_dir)
-    callback = SaveOnBestTrainingRewardCallback(
-        check_freq=100, log_dir=log_dir
-    )  # check frequency set for reward checking
+    callback = SaveOnBestTrainingRewardCallback(check_freq=100, log_dir=log_dir)  # check frequency set for reward checking
 
-    her_kwargs = dict(
-        online_sampling=True, n_sampled_goal=4, goal_selection_strategy="future", max_episode_length=100
-    )
+    her_kwargs = dict(online_sampling=True, n_sampled_goal=4, goal_selection_strategy="future", max_episode_length=100)
 
     # Add our Landmark
     p = env.sim.physics_client
@@ -130,7 +124,7 @@ if __name__ == "__main__":
         "--no-render",
         type=bool,
         default=False,
-        help="gym render otpion",
+        help="gym render option",
     )
     args = parser.parse_args()
 

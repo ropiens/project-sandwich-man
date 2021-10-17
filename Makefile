@@ -9,9 +9,10 @@ setup:
 	source venv/bin/activate;\
 	python3 -m pip install -e panda-gym;\
 	python3 -m pip install -r requirements.txt
+	python setup.py install
 	
 format:
-	black . --exclude venv --line-length 104
+	black . --exclude venv --line-length 128
 	isort . --sg venv
 
 clean:
