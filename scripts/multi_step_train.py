@@ -74,7 +74,8 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> No
     agent = trainer.HAC(env, config, render=False if args.no_render else True)
 
     # save_path of trained models
-    directory = f"{os.getcwd()}/pretrained/{args.env_id}/"
+    path = os.path.abspath(os.path.join(__file__, "../.."))
+    directory = f"{path}/pretrained/{args.env_id}/"
     filename = f"HAC_{args.env_id}"
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -103,6 +104,8 @@ if __name__ == "__main__":
         help="gym render option",
     )
     args = parser.parse_args()
-    config.read("agent/config/multi_step_agent.cfg")
+
+    path = os.path.abspath(os.path.join(__file__, "../.."))
+    config.read(f"{path}/agent/config/multi_step_agent.cfg")
 
     main(args, config)

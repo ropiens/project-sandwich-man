@@ -10,11 +10,11 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         # actor
         self.actor = nn.Sequential(
-            nn.Linear(state_dim + goal_dim, 64),
+            nn.Linear(state_dim + goal_dim, 128),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Linear(64, action_dim),
+            nn.Linear(128, action_dim),
             nn.Tanh(),
         )
         # max value of actions
@@ -33,11 +33,11 @@ class Critic(nn.Module):
         super(Critic, self).__init__()
         # UVFA critic
         self.critic = nn.Sequential(
-            nn.Linear(state_dim + goal_dim + action_dim, 64),
+            nn.Linear(state_dim + goal_dim + action_dim, 128),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Linear(128, 1),
             nn.Sigmoid(),
         )
         self.H = H
