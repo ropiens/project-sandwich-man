@@ -27,9 +27,14 @@ class HAC:
         self.replay_buffer = [ReplayBuffer()]
 
         # adding remaining levels
-        for _ in range(self.k_level - 1):
-            self.HAC.append(DDPG(self.state_dim, self.goal_dim, self.goal_dim, goal_bounds, goal_offset, self.lr, self.H))
-            self.replay_buffer.append(ReplayBuffer())
+        for i in range(1, self.k_level):
+            if i == self.k_level - 1:
+                final_goal_dim = self.env.observation_space["desired_goal"].shape[0]
+                self.HAC.append(DDPG(self.state_dim, final_goal_dim, self.goal_dim, goal_bounds, goal_offset, self.lr, self.H))
+                self.replay_buffer.append(ReplayBuffer())
+            else:
+                self.HAC.append(DDPG(self.state_dim, self.goal_dim, self.goal_dim, goal_bounds, goal_offset, self.lr, self.H))
+                self.replay_buffer.append(ReplayBuffer())
 
         # logging parameters
         self.goals = [None] * self.k_level
@@ -42,7 +47,8 @@ class HAC:
     def set_parameters(self, config):
         # environment dependent parameters
         self.state_dim = self.env.observation_space["observation"].shape[0]
-        self.goal_dim = self.env.observation_space["desired_goal"].shape[0]
+        self.goal_dim = len(self.env.robot.get_ee_position()) + self.env.observation_space["desired_goal"].shape[0] # block-gripper-informed goal
+        if not self.env.robot.block_gripper: self.goal_dim += 1
         self.action_dim = self.env.action_space.shape[0]
 
         self.action_clip_low = self.env.action_space.low
@@ -105,6 +111,18 @@ class HAC:
         d = distance(achieved_goal, desired_goal)
         return (d < self.threshold).astype(np.float32)
 
+    def _ag(self, obs):
+        """Return achieved goal from observation in block-gripper-informed-goal format"""
+        ee_position = np.array(obs[:len(self.env.robot.get_ee_position())])
+        fingers_width = np.array([obs[len(self.env.robot.get_obs())]])
+        blocks = np.concatenate(
+            [   np.array(self.env.sim.get_base_position("object1")), 
+                np.array(self.env.sim.get_base_position("object2"))]
+        )
+        ag = np.concatenate((ee_position, fingers_width, blocks))
+        assert self.goal_dim == len(ag)
+        return ag
+
     def run_HAC(self, i_level, state, goal, is_subgoal_test, debug=False):
         next_state = None
         done = None
@@ -140,11 +158,11 @@ class HAC:
                 next_state, done = self.run_HAC(i_level - 1, state, action, is_next_subgoal_test)
 
                 # if subgoal was tested but not achieved, add subgoal testing transition
-                if is_next_subgoal_test and not self.check_goal(next_state["achieved_goal"], action):
+                if is_next_subgoal_test and not self.check_goal(self._ag(next_state["observation"]), action):
                     self.replay_buffer[i_level].add((state, action, -self.H, next_state["observation"], goal, 0.0, float(done)))
 
                 # for hindsight action transition
-                action = next_state["achieved_goal"]
+                action = self._ag(next_state["observation"])
 
             #   <================ low level policy ================>
             else:
@@ -172,7 +190,7 @@ class HAC:
 
             #   <================ finish one step/transition ================>
             # check if goal is achieved
-            goal_achieved = self.check_goal(next_state["achieved_goal"], goal)
+            goal_achieved = self.check_goal(self._ag(next_state["observation"]), goal)
 
             # hindsight action transition
             if goal_achieved:
@@ -196,7 +214,7 @@ class HAC:
         goal_transitions[-1][5] = 0.0
         for transition in goal_transitions:
             # last state is goal for all transitions
-            transition[4] = next_state["achieved_goal"]
+            transition[4] = self._ag(next_state["observation"])
             self.replay_buffer[i_level].add(tuple(transition))
 
         return next_state, done
