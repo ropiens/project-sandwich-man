@@ -161,7 +161,7 @@ class HAC:
                     else:
                         action = np.random.uniform(self.goal_clip_low, self.goal_clip_high)
 
-                    if abs(action[4] - action[-1]) < 0.02:
+                    if distance(action[4:7], action[7:]) < 0.02:
                         action[-1] *= 3  # if blocks are ovelapped stack-up
 
                 # Determine whether to test subgoal (action)
