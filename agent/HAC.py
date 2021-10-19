@@ -75,7 +75,7 @@ class HAC:
         # exploration noise
         self.exploration_action_noise = np.array([float(config["exploration_action_noise"])] * self.action_dim)
         self.exploration_goal_noise = np.array([float(config["exploration_goal_noise"])] * self.goal_dim)
-    
+
     def set_tensorboard_writer(self, writer):
         self.writer = writer
 

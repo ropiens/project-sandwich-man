@@ -8,8 +8,8 @@ import numpy as np
 import panda_gym
 import torch
 from gym.core import Env
-
 from torch.utils.tensorboard import SummaryWriter
+
 from agent import HAC as trainer
 
 
@@ -70,7 +70,6 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> No
 
     # Visualize workspace
     visualize_workspace(env, config)
-
 
     # Initialize HAC agent and setting parameters
     agent = trainer.HAC(env, config, render=False if args.no_render else True)
