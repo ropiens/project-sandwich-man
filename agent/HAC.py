@@ -42,23 +42,22 @@ class HAC:
         self.timestep = 0
 
         # for subgoal viz
-        self.subgoal_1, self.subgoal_2 = None, None
+        self.subgoal_1, self.subgoal_2, self.ee_p = None, None, None
 
     def set_parameters(self, config):
         # environment dependent parameters
         self.state_dim = self.env.observation_space["observation"].shape[0]
-        self.goal_dim = len(self.env.robot.get_ee_position()) + self.env.observation_space["desired_goal"].shape[0] # block-gripper-informed goal
-        if not self.env.robot.block_gripper: self.goal_dim += 1
+        self.goal_dim = (
+            len(self.env.robot.get_ee_position()) + self.env.observation_space["desired_goal"].shape[0]
+        )  # block-gripper-informed goal
+        if not self.env.robot.block_gripper:
+            self.goal_dim += 1
         self.action_dim = self.env.action_space.shape[0]
 
         self.action_clip_low = self.env.action_space.low
         self.action_clip_high = self.env.action_space.high
-        self.goal_clip_low = np.concatenate(
-            (np.array(literal_eval(config["workspace_low"])), np.array(literal_eval(config["workspace_low"])))
-        )
-        self.goal_clip_high = np.concatenate(
-            (np.array(literal_eval(config["workspace_high"])), np.array(literal_eval(config["workspace_high"])))
-        )
+        self.goal_clip_low = np.array(literal_eval(config["goal_clip_low"]))
+        self.goal_clip_high = np.array(literal_eval(config["goal_clip_high"]))
 
         # HAC parameters
         self.k_level = int(config["k_level"])
@@ -79,10 +78,23 @@ class HAC:
     def render_subgoal(self, subgoal):
         p = self.env.sim.physics_client
 
+        if not self.ee_p is None:
+            p.removeBody(self.ee_p)
         if not self.subgoal_1 is None:
             p.removeBody(self.subgoal_1)
         if not self.subgoal_2 is None:
             p.removeBody(self.subgoal_2)
+
+        # visualize ee position
+        sphere_0 = p.createVisualShape(
+            shapeType=p.GEOM_SPHERE,
+            radius=0.02,
+            rgbaColor=[0.1, 0.1, 0.1, 0.3],
+            specularColor=[0, 0, 0],
+            visualFramePosition=subgoal[:3],
+        )
+
+        self.ee_p = p.createMultiBody(baseVisualShapeIndex=sphere_0)
 
         # visualize subgoal_1
         sphere_1 = p.createVisualShape(
@@ -90,7 +102,7 @@ class HAC:
             radius=0.02,
             rgbaColor=[0.9, 0.1, 0.1, 0.3],
             specularColor=[0, 0, 0],
-            visualFramePosition=subgoal[:3],
+            visualFramePosition=subgoal[4:7],
         )
 
         self.subgoal_1 = p.createMultiBody(baseVisualShapeIndex=sphere_1)
@@ -101,7 +113,7 @@ class HAC:
             radius=0.02,
             rgbaColor=[0.1, 0.9, 0.1, 0.3],
             specularColor=[0, 0, 0],
-            visualFramePosition=subgoal[3:],
+            visualFramePosition=subgoal[7:],
         )
 
         self.subgoal_2 = p.createMultiBody(baseVisualShapeIndex=sphere_2)
@@ -113,11 +125,10 @@ class HAC:
 
     def _ag(self, obs):
         """Return achieved goal from observation in block-gripper-informed-goal format"""
-        ee_position = np.array(obs[:len(self.env.robot.get_ee_position())])
+        ee_position = np.array(obs[: len(self.env.robot.get_ee_position())])
         fingers_width = np.array([obs[len(self.env.robot.get_obs())]])
         blocks = np.concatenate(
-            [   np.array(self.env.sim.get_base_position("object1")), 
-                np.array(self.env.sim.get_base_position("object2"))]
+            [np.array(self.env.sim.get_base_position("object1")), np.array(self.env.sim.get_base_position("object2"))]
         )
         ag = np.concatenate((ee_position, fingers_width, blocks))
         assert self.goal_dim == len(ag)
@@ -149,6 +160,9 @@ class HAC:
                         action = action.clip(self.goal_clip_low, self.goal_clip_high)
                     else:
                         action = np.random.uniform(self.goal_clip_low, self.goal_clip_high)
+
+                    if abs(action[4] - action[-1]) < 0.02:
+                        action[-1] *= 3  # if blocks are ovelapped stack-up
 
                 # Determine whether to test subgoal (action)
                 if np.random.random_sample() < self.lamda:
@@ -190,7 +204,10 @@ class HAC:
 
             #   <================ finish one step/transition ================>
             # check if goal is achieved
-            goal_achieved = self.check_goal(self._ag(next_state["observation"]), goal)
+            if i_level == self.k_level - 1:
+                goal_achieved = self.check_goal(next_state["achieved_goal"], goal)
+            else:
+                goal_achieved = self.check_goal(self._ag(next_state["observation"]), goal)
 
             # hindsight action transition
             if goal_achieved:
@@ -214,7 +231,10 @@ class HAC:
         goal_transitions[-1][5] = 0.0
         for transition in goal_transitions:
             # last state is goal for all transitions
-            transition[4] = self._ag(next_state["observation"])
+            if i_level == self.k_level - 1:
+                transition[4] = next_state["achieved_goal"]
+            else:
+                transition[4] = self._ag(next_state["observation"])
             self.replay_buffer[i_level].add(tuple(transition))
 
         return next_state, done
@@ -240,6 +260,7 @@ class HAC:
 
     def update(self, n_iter, batch_size):
         for i in range(self.k_level):
+            print(f"level: {i} Update!")
             self.HAC[i].update(self.replay_buffer[i], n_iter, batch_size)
 
     def save(self, save_path):

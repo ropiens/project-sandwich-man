@@ -22,7 +22,7 @@ def visualize_workspace(env: Env, config: configparser.ConfigParser) -> None:
         config(ConfigParser): parsed data(parameters) from configuration file
     """
     config = config["Parameter"]
-    workspace_high = literal_eval(config["workspace_high"])
+    workspace_high = literal_eval(config["goal_clip_high"])
 
     env.sim.create_box(
         body_name="workspace",
