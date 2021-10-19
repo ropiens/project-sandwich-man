@@ -29,3 +29,9 @@ python multi_step_train.py --env-id PandaReach-v1
 #  --env-id ENV_ID  panda-gym environment[PandaReach-v1, PandaSlice-v1, PandaPush-v1, PandaPickAndPlace-v1, PandaStack-v1]
 
 ```
+
+### Supporting TensorBoard
+```bash
+tensorboard --logdir=$(LOGDIR)
+# e.g. `tensorboard --logdir=pretrained/PandaStack-v1/logs/`
+```
