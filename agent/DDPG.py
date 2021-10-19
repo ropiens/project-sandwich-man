@@ -63,7 +63,10 @@ class DDPG:
         goal = torch.FloatTensor(goal.reshape(1, -1)).to(device)
         return self.actor(state, goal).detach().cpu().data.numpy().flatten()
 
-    def update(self, buffer, n_iter, batch_size):
+    def set_tensorboard_writer(self, writer):
+        self.writer = writer
+
+    def update(self, buffer, n_iter, batch_size, timestep):
 
         for i in range(n_iter):
             # Sample a batch of transitions from replay buffer:
@@ -85,15 +88,17 @@ class DDPG:
             target_Q = self.critic(next_state, next_action, goal).detach()
             target_Q = reward + ((1 - done) * gamma * target_Q)
 
-            # Optimize Critic:
+            # Compute critic loss
             critic_loss = self.mseLoss(self.critic(state, action, goal), target_Q)
+            self.writer.add_scalar('critic_loss', critic_loss, timestep)
+            # Optimize Critic:
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
             self.critic_optimizer.step()
 
             # Compute actor loss:
             actor_loss = -self.critic(state, self.actor(state, goal), goal).mean()
-
+            self.writer.add_scalar('actor_loss', actor_loss, timestep)
             # Optimize the actor
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
