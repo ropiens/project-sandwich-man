@@ -14,6 +14,7 @@ class HAC:
         # init
         self.render = render
         self.env = env
+        self.writer = None
 
         self.set_parameters(config["Parameter"])
 
@@ -75,6 +76,13 @@ class HAC:
         self.exploration_action_noise = np.array([float(config["exploration_action_noise"])] * self.action_dim)
         self.exploration_goal_noise = np.array([float(config["exploration_goal_noise"])] * self.goal_dim)
 
+    def set_tensorboard_writer(self, writer):
+        self.writer = writer
+
+        # set writers in agents
+        for i_level in range(self.k_level):
+            self.HAC[i_level].set_tensorboard_writer(self.writer)
+
     def render_subgoal(self, subgoal):
         p = self.env.sim.physics_client
 
@@ -85,7 +93,7 @@ class HAC:
         if not self.subgoal_2 is None:
             p.removeBody(self.subgoal_2)
 
-        # visualize ee position
+        # visualize ee position(subgoal)
         sphere_0 = p.createVisualShape(
             shapeType=p.GEOM_SPHERE,
             radius=0.02,
@@ -241,10 +249,10 @@ class HAC:
 
     def train(self, max_episodes, save_episode, save_path=("", "")):
 
+        self.timestep = 0
         # training procedure
         for i_episode in range(1, max_episodes + 1):
             self.reward = 0
-            self.timestep = 0
 
             state = self.env.reset()
             # collecting experience in environment
@@ -261,7 +269,7 @@ class HAC:
     def update(self, n_iter, batch_size):
         for i in range(self.k_level):
             print(f"level: {i} Update!")
-            self.HAC[i].update(self.replay_buffer[i], n_iter, batch_size)
+            self.HAC[i].update(self.replay_buffer[i], n_iter, batch_size, self.timestep)
 
     def save(self, save_path):
         directory, name = save_path

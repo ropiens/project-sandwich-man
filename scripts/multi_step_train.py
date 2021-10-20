@@ -8,6 +8,7 @@ import numpy as np
 import panda_gym
 import torch
 from gym.core import Env
+from torch.utils.tensorboard import SummaryWriter
 
 from agent import HAC as trainer
 
@@ -80,6 +81,10 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> No
     if not os.path.exists(directory):
         os.makedirs(directory)
     save_path = (directory, filename)
+
+    # tensorboard writer
+    writer = SummaryWriter(f"{path}/pretrained/{args.env_id}/logs")
+    agent.set_tensorboard_writer(writer)
 
     # train
     agent.train(max_episodes=1000, save_episode=10, save_path=save_path)
