@@ -48,7 +48,8 @@ class Critic(nn.Module):
 
 
 class DDPG:
-    def __init__(self, state_dim, goal_dim, action_dim, action_bounds, offset, lr, H):
+    def __init__(self, state_dim, goal_dim, action_dim, action_bounds, offset, lr, H, name=""):
+        self.name = name
 
         self.actor = Actor(state_dim, goal_dim, action_dim, action_bounds, offset).to(device)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr)
@@ -90,7 +91,7 @@ class DDPG:
 
             # Compute critic loss
             critic_loss = self.mseLoss(self.critic(state, action, goal), target_Q)
-            self.writer.add_scalar("critic_loss", critic_loss, timestep)
+            self.writer.add_scalar(f"{self.name}/critic_loss", critic_loss, timestep)
             # Optimize Critic:
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
@@ -98,7 +99,7 @@ class DDPG:
 
             # Compute actor loss:
             actor_loss = -self.critic(state, self.actor(state, goal), goal).mean()
-            self.writer.add_scalar("actor_loss", actor_loss, timestep)
+            self.writer.add_scalar(f"{self.name}/actor_loss", actor_loss, timestep)
             # Optimize the actor
             self.actor_optimizer.zero_grad()
             actor_loss.backward()

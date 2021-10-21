@@ -69,7 +69,12 @@ def main(args):
     env = Monitor(env, log_dir)
     callback = SaveOnBestTrainingRewardCallback(check_freq=100, log_dir=log_dir)  # check frequency set for reward checking
 
-    her_kwargs = dict(online_sampling=True, n_sampled_goal=4, goal_selection_strategy="future", max_episode_length=100)
+    her_kwargs = dict(
+        online_sampling=True,
+        n_sampled_goal=4,
+        goal_selection_strategy="future",
+        max_episode_length=100,
+    )
 
     # Add our Landmark
     p = env.sim.physics_client
