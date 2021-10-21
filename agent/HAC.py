@@ -24,17 +24,50 @@ class HAC:
         goal_offset = 0.5 * (self.goal_clip_high + self.goal_clip_low)
 
         # adding lowest level
-        self.HAC = [DDPG(self.state_dim, self.goal_dim, self.action_dim, action_bounds, action_offset, self.lr, self.H)]
+        self.HAC = [
+            DDPG(
+                self.state_dim,
+                self.goal_dim,
+                self.action_dim,
+                action_bounds,
+                action_offset,
+                self.lr,
+                self.H,
+                name="level_0",
+            )
+        ]
         self.replay_buffer = [ReplayBuffer()]
 
         # adding remaining levels
         for i in range(1, self.k_level):
             if i == self.k_level - 1:
                 final_goal_dim = self.env.observation_space["desired_goal"].shape[0]
-                self.HAC.append(DDPG(self.state_dim, final_goal_dim, self.goal_dim, goal_bounds, goal_offset, self.lr, self.H))
+                self.HAC.append(
+                    DDPG(
+                        self.state_dim,
+                        final_goal_dim,
+                        self.goal_dim,
+                        goal_bounds,
+                        goal_offset,
+                        self.lr,
+                        self.H,
+                        name=f"level_{i}",
+                    )
+                )
                 self.replay_buffer.append(ReplayBuffer())
             else:
-                self.HAC.append(DDPG(self.state_dim, self.goal_dim, self.goal_dim, goal_bounds, goal_offset, self.lr, self.H))
+                self.HAC.append(
+                    DDPG(
+                        self.state_dim,
+                        self.goal_dim,
+                        self.goal_dim,
+                        goal_bounds,
+                        goal_offset,
+                        self.lr,
+                        self.H,
+                        name=f"level_{i}",
+                    )
+                )
                 self.replay_buffer.append(ReplayBuffer())
 
         # logging parameters
@@ -136,7 +169,10 @@ class HAC:
         ee_position = np.array(obs[: len(self.env.robot.get_ee_position())])
         fingers_width = np.array([obs[len(self.env.robot.get_obs())]])
         blocks = np.concatenate(
-            [np.array(self.env.sim.get_base_position("object1")), np.array(self.env.sim.get_base_position("object2"))]
+            [
+                np.array(self.env.sim.get_base_position("object1")),
+                np.array(self.env.sim.get_base_position("object2")),
+            ]
         )
         ag = np.concatenate((ee_position, fingers_width, blocks))
         assert self.goal_dim == len(ag)
@@ -181,7 +217,17 @@ class HAC:
 
                 # if subgoal was tested but not achieved, add subgoal testing transition
                 if is_next_subgoal_test and not self.check_goal(self._ag(next_state["observation"]), action):
-                    self.replay_buffer[i_level].add((state, action, -self.H, next_state["observation"], goal, 0.0, float(done)))
+                    self.replay_buffer[i_level].add(
+                        (
+                            state,
+                            action,
+                            -self.H,
+                            next_state["observation"],
+                            goal,
+                            0.0,
+                            float(done),
+                        )
+                    )
 
                 # for hindsight action transition
                 action = self._ag(next_state["observation"])
@@ -219,12 +265,42 @@ class HAC:
 
             # hindsight action transition
             if goal_achieved:
-                self.replay_buffer[i_level].add((state, action, 0.0, next_state["observation"], goal, 0.0, float(done)))
+                self.replay_buffer[i_level].add(
+                    (
+                        state,
+                        action,
+                        0.0,
+                        next_state["observation"],
+                        goal,
+                        0.0,
+                        float(done),
+                    )
+                )
             else:
-                self.replay_buffer[i_level].add((state, action, -1.0, next_state["observation"], goal, self.gamma, float(done)))
+                self.replay_buffer[i_level].add(
+                    (
+                        state,
+                        action,
+                        -1.0,
+                        next_state["observation"],
+                        goal,
+                        self.gamma,
+                        float(done),
+                    )
+                )
 
             # copy for goal transition
-            goal_transitions.append([state, action, -1.0, next_state["observation"], None, self.gamma, float(done)])
+            goal_transitions.append(
+                [
+                    state,
+                    action,
+                    -1.0,
+                    next_state["observation"],
+                    None,
+                    self.gamma,
+                    float(done),
+                ]
+            )
 
             state = next_state["observation"]
 
@@ -268,7 +344,6 @@ class HAC:
 
     def update(self, n_iter, batch_size):
         for i in range(self.k_level):
-            print(f"level: {i} Update!")
             self.HAC[i].update(self.replay_buffer[i], n_iter, batch_size, self.timestep)
 
     def save(self, save_path):
