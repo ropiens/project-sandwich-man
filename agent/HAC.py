@@ -205,7 +205,7 @@ class HAC:
                     else:
                         action = np.random.uniform(self.goal_clip_low, self.goal_clip_high)
 
-                    if distance(action[4:7], action[7:]) < 0.02:
+                    if distance(action[4:7], action[7:]) < 0.02:# object size/2
                         action[-1] *= 3  # if blocks are ovelapped stack-up
 
                 # Determine whether to test subgoal (action)
@@ -255,6 +255,7 @@ class HAC:
                 # this is for logging
                 self.reward += rew
                 self.timestep += 1
+                self.writer.add_scalar('reward', self.reward, self.timestep)
 
             #   <================ finish one step/transition ================>
             # check if goal is achieved

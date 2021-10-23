@@ -27,13 +27,7 @@ class ReplayBuffer:
 
         indexes = np.random.randint(0, len(self.buffer), size=batch_size)
         states, actions, rewards, next_states, goals, gamma, dones = (
-            [],
-            [],
-            [],
-            [],
-            [],
-            [],
-            [],
+            [] for _ in range(7)
         )
 
         for i in indexes:

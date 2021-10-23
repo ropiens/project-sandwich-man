@@ -87,7 +87,7 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> No
     agent.set_tensorboard_writer(writer)
 
     # train
-    agent.train(max_episodes=1000, save_episode=10, save_path=save_path)
+    agent.train(max_episodes=5000, save_episode=10, save_path=save_path)
 
 
 if __name__ == "__main__":
