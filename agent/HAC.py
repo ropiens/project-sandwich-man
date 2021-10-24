@@ -76,7 +76,7 @@ class HAC:
         self.timestep = 0
 
         # for subgoal viz
-        self.subgoal_1, self.subgoal_2, self.ee_p = None, None, None
+        self.create_subgoal()
 
     def set_parameters(self, config):
         # environment dependent parameters
@@ -116,48 +116,36 @@ class HAC:
         for i_level in range(self.k_level):
             self.HAC[i_level].set_tensorboard_writer(self.writer)
 
-    def render_subgoal(self, subgoal):
-        p = self.env.sim.physics_client
-
-        if not self.ee_p is None:
-            p.removeBody(self.ee_p)
-        if not self.subgoal_1 is None:
-            p.removeBody(self.subgoal_1)
-        if not self.subgoal_2 is None:
-            p.removeBody(self.subgoal_2)
-
+    def create_subgoal(self):
         # visualize ee position(subgoal)
-        sphere_0 = p.createVisualShape(
-            shapeType=p.GEOM_SPHERE,
-            radius=0.02,
-            rgbaColor=[0.1, 0.1, 0.1, 0.3],
-            specularColor=[0, 0, 0],
-            visualFramePosition=subgoal[:3],
-        )
-
-        self.ee_p = p.createMultiBody(baseVisualShapeIndex=sphere_0)
+        self.env.sim.create_sphere(
+            body_name="ee_position", 
+            radius=0.02, mass=0,
+            position=[0,0,0],
+            rgba_color=[0.1, 0.1, 0.1, 0.3],
+            ghost=True)
 
         # visualize subgoal_1
-        sphere_1 = p.createVisualShape(
-            shapeType=p.GEOM_SPHERE,
-            radius=0.02,
-            rgbaColor=[0.9, 0.1, 0.1, 0.3],
-            specularColor=[0, 0, 0],
-            visualFramePosition=subgoal[4:7],
-        )
-
-        self.subgoal_1 = p.createMultiBody(baseVisualShapeIndex=sphere_1)
+        self.env.sim.create_sphere(
+            body_name="subgoal_1", 
+            radius=0.02, mass=0,
+            position=[0,0,0],
+            rgba_color=[0.9, 0.1, 0.1, 0.3],
+            ghost=True)
 
         # visualize subgoal_2
-        sphere_2 = p.createVisualShape(
-            shapeType=p.GEOM_SPHERE,
-            radius=0.02,
-            rgbaColor=[0.1, 0.9, 0.1, 0.3],
-            specularColor=[0, 0, 0],
-            visualFramePosition=subgoal[7:],
-        )
-
-        self.subgoal_2 = p.createMultiBody(baseVisualShapeIndex=sphere_2)
+        self.env.sim.create_sphere(
+            body_name="subgoal_2", 
+            radius=0.02, mass=0,
+            position=[0,0,0],
+            rgba_color=[0.1, 0.9, 0.1, 0.3],
+            ghost=True)
+    
+    def render_subgoal(self, subgoal):
+        # render subgoals with setting new position.
+        self.env.sim.set_base_pose("ee_position", subgoal[:3], [0,0,0,1])
+        self.env.sim.set_base_pose("subgoal_1", subgoal[4:7], [0,0,0,1])
+        self.env.sim.set_base_pose("subgoal_2", subgoal[7:], [0,0,0,1])
 
     def check_goal(self, achieved_goal, desired_goal):
         # must be vectorized !!
@@ -213,6 +201,7 @@ class HAC:
                     is_next_subgoal_test = True
 
                 # Pass subgoal to lower level
+                if self.render: self.render_subgoal(action)
                 next_state, done = self.run_HAC(i_level - 1, state, action, is_next_subgoal_test)
 
                 # if subgoal was tested but not achieved, add subgoal testing transition
@@ -243,19 +232,11 @@ class HAC:
                         action = np.random.uniform(self.action_clip_low, self.action_clip_high)
 
                 # take primitive action
-                next_state, rew, done, _ = self.env.step(action)
-
-                if self.render:
-                    self.env.render()
-                    self.render_subgoal(goal)
-
-                    for _ in range(1000000):
-                        continue
+                next_state, rew, done, info = self.env.step(action)
 
                 # this is for logging
                 self.reward += rew
                 self.timestep += 1
-                self.writer.add_scalar('reward', self.reward, self.timestep)
 
             #   <================ finish one step/transition ================>
             # check if goal is achieved
@@ -341,6 +322,7 @@ class HAC:
             if i_episode % save_episode == 0:
                 self.save(save_path)
 
+            self.writer.add_scalar('reward', self.reward, self.timestep)
             print("Episode: {}\t Reward: {}".format(i_episode, self.reward))
 
     def update(self, n_iter, batch_size):
