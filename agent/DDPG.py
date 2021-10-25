@@ -48,16 +48,21 @@ class Critic(nn.Module):
 
 
 class DDPG:
-    def __init__(self, state_dim, goal_dim, action_dim, action_bounds, offset, lr, H, name=""):
+    def __init__(self, state_dim, goal_dim, action_dim, action_bounds, offset, lr, H, tau, name=""):
         self.name = name
 
         self.actor = Actor(state_dim, goal_dim, action_dim, action_bounds, offset).to(device)
+        self.target_actor = Actor(state_dim, goal_dim, action_dim, action_bounds, offset).to(device)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr)
 
         self.critic = Critic(state_dim, goal_dim, action_dim, H).to(device)
+        self.target_critic = Critic(state_dim, goal_dim, action_dim, H).to(device)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=lr)
 
         self.mseLoss = torch.nn.MSELoss()
+        
+        self.tau = tau
+        self.soft_update(1.0)
 
     def select_action(self, state, goal):
         state = torch.FloatTensor(state.reshape(1, -1)).to(device)
@@ -66,6 +71,16 @@ class DDPG:
 
     def set_tensorboard_writer(self, writer):
         self.writer = writer
+
+    def soft_update(self, tau=None):
+        if tau is None:
+            tau = self.tau
+
+        for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
+            target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
+
+        for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
+            target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
     def update(self, buffer, n_iter, batch_size, timestep):
 
@@ -83,10 +98,10 @@ class DDPG:
             done = torch.FloatTensor(done).reshape((batch_size, 1)).to(device)
 
             # select next action
-            next_action = self.actor(next_state, goal).detach()
+            next_action = self.target_actor(next_state, goal).detach()
 
             # Compute target Q-value:
-            target_Q = self.critic(next_state, next_action, goal).detach()
+            target_Q = self.target_critic(next_state, next_action, goal).detach()
             target_Q = reward + ((1 - done) * gamma * target_Q)
 
             # Compute critic loss
@@ -104,6 +119,9 @@ class DDPG:
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             self.actor_optimizer.step()
+
+            # soft-update target networks
+            self.soft_update()
 
     def save(self, directory, name):
         torch.save(self.actor.state_dict(), "%s/%s_actor.pth" % (directory, name))

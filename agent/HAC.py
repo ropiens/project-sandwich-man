@@ -33,6 +33,7 @@ class HAC:
                 action_offset,
                 self.lr,
                 self.H,
+                self.tau,
                 name="level_0",
             )
         ]
@@ -51,6 +52,7 @@ class HAC:
                         goal_offset,
                         self.lr,
                         self.H,
+                        self.tau,
                         name=f"level_{i}",
                     )
                 )
@@ -99,6 +101,7 @@ class HAC:
         self.lamda = float(config["lamda"])
         # DDPG parameters
         self.lr = float(config["lr"])
+        self.tau = float(config["tau"])
         self.gamma = float(config["gamma"])
         self.n_iter = int(config["n_iter"])
         self.batch_size = int(config["batch_size"])
@@ -119,33 +122,24 @@ class HAC:
     def create_subgoal(self):
         # visualize ee position(subgoal)
         self.env.sim.create_sphere(
-            body_name="ee_position", 
-            radius=0.02, mass=0,
-            position=[0,0,0],
-            rgba_color=[0.1, 0.1, 0.1, 0.3],
-            ghost=True)
+            body_name="ee_position", radius=0.02, mass=0, position=[0, 0, 0], rgba_color=[0.1, 0.1, 0.1, 0.3], ghost=True
+        )
 
         # visualize subgoal_1
         self.env.sim.create_sphere(
-            body_name="subgoal_1", 
-            radius=0.02, mass=0,
-            position=[0,0,0],
-            rgba_color=[0.9, 0.1, 0.1, 0.3],
-            ghost=True)
+            body_name="subgoal_1", radius=0.02, mass=0, position=[0, 0, 0], rgba_color=[0.9, 0.1, 0.1, 0.3], ghost=True
+        )
 
         # visualize subgoal_2
         self.env.sim.create_sphere(
-            body_name="subgoal_2", 
-            radius=0.02, mass=0,
-            position=[0,0,0],
-            rgba_color=[0.1, 0.9, 0.1, 0.3],
-            ghost=True)
-    
+            body_name="subgoal_2", radius=0.02, mass=0, position=[0, 0, 0], rgba_color=[0.1, 0.9, 0.1, 0.3], ghost=True
+        )
+
     def render_subgoal(self, subgoal):
         # render subgoals with setting new position.
-        self.env.sim.set_base_pose("ee_position", subgoal[:3], [0,0,0,1])
-        self.env.sim.set_base_pose("subgoal_1", subgoal[4:7], [0,0,0,1])
-        self.env.sim.set_base_pose("subgoal_2", subgoal[7:], [0,0,0,1])
+        self.env.sim.set_base_pose("ee_position", subgoal[:3], [0, 0, 0, 1])
+        self.env.sim.set_base_pose("subgoal_1", subgoal[4:7], [0, 0, 0, 1])
+        self.env.sim.set_base_pose("subgoal_2", subgoal[7:], [0, 0, 0, 1])
 
     def check_goal(self, achieved_goal, desired_goal):
         # must be vectorized !!
@@ -193,7 +187,7 @@ class HAC:
                     else:
                         action = np.random.uniform(self.goal_clip_low, self.goal_clip_high)
 
-                    if distance(action[4:7], action[7:]) < 0.02:# object size/2
+                    if distance(action[4:7], action[7:]) < 0.02:  # object size/2
                         action[-1] *= 3  # if blocks are ovelapped stack-up
 
                 # Determine whether to test subgoal (action)
@@ -201,7 +195,8 @@ class HAC:
                     is_next_subgoal_test = True
 
                 # Pass subgoal to lower level
-                if self.render: self.render_subgoal(action)
+                if self.render:
+                    self.render_subgoal(action)
                 next_state, done = self.run_HAC(i_level - 1, state, action, is_next_subgoal_test)
 
                 # if subgoal was tested but not achieved, add subgoal testing transition
@@ -232,7 +227,8 @@ class HAC:
                         action = np.random.uniform(self.action_clip_low, self.action_clip_high)
 
                 # take primitive action
-                next_state, rew, done, info = self.env.step(action)
+                next_state, rew, _, info = self.env.step(action)
+                done = info['is_success']
 
                 # this is for logging
                 self.reward += rew
@@ -242,8 +238,17 @@ class HAC:
             # check if goal is achieved
             if i_level == self.k_level - 1:
                 goal_achieved = self.check_goal(next_state["achieved_goal"], goal)
+                if goal_achieved: 
+                    print(f"level: {i_level} | goal_achieved! {goal_achieved}")
+                    print(f"timestep: {self.timestep}")
+                    print(next_state["achieved_goal"], goal)
             else:
                 goal_achieved = self.check_goal(self._ag(next_state["observation"]), goal)
+                if goal_achieved:
+                    print(f"level: {i_level} | goal_achieved! {goal_achieved}")
+                    print(f"timestep: {self.timestep}")
+                    print(self._ag(next_state["observation"]), goal)
+
 
             # hindsight action transition
             if goal_achieved:
@@ -322,7 +327,7 @@ class HAC:
             if i_episode % save_episode == 0:
                 self.save(save_path)
 
-            self.writer.add_scalar('reward', self.reward, self.timestep)
+            self.writer.add_scalar("reward", self.reward, self.timestep)
             print("Episode: {}\t Reward: {}".format(i_episode, self.reward))
 
     def update(self, n_iter, batch_size):
