@@ -37,3 +37,9 @@ python multi_step_train.py --env-id PandaStack-v1
 #                        gym render option
 
 ```
+
+### Supporting TensorBoard
+```bash
+tensorboard --logdir=$(LOGDIR)
+# e.g. `tensorboard --logdir=pretrained/PandaStack-v1/logs/`
+```

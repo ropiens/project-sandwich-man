@@ -8,6 +8,7 @@ import numpy as np
 import panda_gym
 import torch
 from gym.core import Env
+from torch.utils.tensorboard import SummaryWriter
 
 from agent import HAC as trainer
 
@@ -22,7 +23,7 @@ def visualize_workspace(env: Env, config: configparser.ConfigParser) -> None:
         config(ConfigParser): parsed data(parameters) from configuration file
     """
     config = config["Parameter"]
-    workspace_high = literal_eval(config["workspace_high"])
+    workspace_high = literal_eval(config["goal_clip_high"])
 
     env.sim.create_box(
         body_name="workspace",
@@ -81,8 +82,12 @@ def main(args: argparse.ArgumentParser, config: configparser.ConfigParser) -> No
         os.makedirs(directory)
     save_path = (directory, filename)
 
+    # tensorboard writer
+    writer = SummaryWriter(f"{path}/pretrained/{args.env_id}/logs")
+    agent.set_tensorboard_writer(writer)
+
     # train
-    agent.train(max_episodes=1000, save_episode=10, save_path=save_path)
+    agent.train(max_episodes=5000, save_episode=10, save_path=save_path)
 
 
 if __name__ == "__main__":
